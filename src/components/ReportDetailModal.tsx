@@ -14,10 +14,10 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
   if (!report) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4">
-      <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-2xs p-0 sm:p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-lg border border-[#E5E7EB] shadow-xl w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB]">
           <div>
             <h2 className="text-base font-bold text-[#171923]">{report.firmName}</h2>
             <p className="text-xs text-[#737784] mt-0.5">Outlet Report Details</p>
@@ -25,16 +25,16 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-[#737784] hover:text-[#171923] hover:bg-[#F3F4F6] rounded-md transition-colors cursor-pointer"
+            className="p-2 text-[#737784] hover:text-[#171923] hover:bg-[#F3F4F6] rounded-md transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-5 text-xs">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
           {/* Key Badges */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge type="interest" value={report.interestLevel} />
             <StatusBadge type="status" value={report.status} />
             <span className="px-2 py-0.5 rounded text-xs bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB]">
@@ -43,7 +43,7 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3 p-3.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md">
             <div>
               <span className="text-[#737784] block mb-0.5 font-medium">Owner Name</span>
               <span className="text-[#171923] font-semibold flex items-center gap-1.5">
@@ -57,7 +57,7 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                 href={`tel:${report.mobileNumber}`}
                 className="text-[#171923] font-semibold flex items-center gap-1.5 hover:text-[#FF5722]"
               >
-                <Phone className="w-3.5 h-3.5 text-[#737784]" />
+                <Phone className="w-3.5 h-3.5 text-[#FF5722]" />
                 {report.mobileNumber}
               </a>
             </div>
@@ -151,11 +151,11 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] flex justify-end">
+        <div className="px-4 sm:px-5 py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-[#171923] bg-white border border-[#E5E7EB] rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2 text-xs font-medium text-[#171923] bg-white border border-[#E5E7EB] rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-center"
           >
             Close
           </button>

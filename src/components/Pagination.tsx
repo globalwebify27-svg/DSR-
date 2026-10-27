@@ -24,8 +24,8 @@ export function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white border-t border-[#E5E7EB] text-xs text-[#737784]">
-      <div>
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-4 py-3 bg-white border-t border-[#E5E7EB] text-xs text-[#737784] rounded-b-lg">
+      <div className="text-center sm:text-left">
         Showing <span className="font-medium text-[#171923]">{startItem}</span> to{" "}
         <span className="font-medium text-[#171923]">{endItem}</span> of{" "}
         <span className="font-medium text-[#171923]">{totalItems}</span> results
@@ -42,34 +42,42 @@ export function Pagination({
           <ChevronLeft className="w-3.5 h-3.5" />
         </button>
 
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter(
-            (p) =>
-              p === 1 ||
-              p === totalPages ||
-              (p >= currentPage - 1 && p <= currentPage + 1)
-          )
-          .map((p, idx, arr) => {
-            const prev = arr[idx - 1];
-            return (
-              <React.Fragment key={p}>
-                {prev && p - prev > 1 && (
-                  <span className="px-2 py-1 text-gray-400">...</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onPageChange(p)}
-                  className={`min-w-[28px] h-7 px-2 text-xs font-medium rounded border transition-colors cursor-pointer ${
-                    currentPage === p
-                      ? "bg-[#FF5722] border-[#FF5722] text-white"
-                      : "bg-white border-[#E5E7EB] text-[#171923] hover:bg-[#F8F9FA]"
-                  }`}
-                >
-                  {p}
-                </button>
-              </React.Fragment>
-            );
-          })}
+        {/* Mobile Page Indicator */}
+        <span className="sm:hidden px-2 text-xs font-medium text-[#171923]">
+          {currentPage} / {totalPages}
+        </span>
+
+        {/* Desktop Page Number Buttons */}
+        <div className="hidden sm:flex items-center space-x-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(
+              (p) =>
+                p === 1 ||
+                p === totalPages ||
+                (p >= currentPage - 1 && p <= currentPage + 1)
+            )
+            .map((p, idx, arr) => {
+              const prev = arr[idx - 1];
+              return (
+                <React.Fragment key={p}>
+                  {prev && p - prev > 1 && (
+                    <span className="px-2 py-1 text-gray-400">...</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onPageChange(p)}
+                    className={`min-w-[28px] h-7 px-2 text-xs font-medium rounded border transition-colors cursor-pointer ${
+                      currentPage === p
+                        ? "bg-[#FF5722] border-[#FF5722] text-white"
+                        : "bg-white border-[#E5E7EB] text-[#171923] hover:bg-[#F8F9FA]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                </React.Fragment>
+              );
+            })}
+        </div>
 
         <button
           type="button"

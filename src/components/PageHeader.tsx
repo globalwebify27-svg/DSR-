@@ -22,10 +22,10 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#E5E7EB]">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-5 border-b border-[#E5E7EB]">
       <div>
         <div className="flex items-center gap-2.5">
-          <h1 className="text-xl font-bold tracking-tight text-[#171923]">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#171923]">
             {title}
           </h1>
           {badge !== undefined && (
@@ -39,12 +39,12 @@ export function PageHeader({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full sm:w-auto">
         {children}
         {actionText && actionHref && (
           <Link
             href={actionHref}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs cursor-pointer text-center"
           >
             <Plus className="w-4 h-4" />
             {actionText}
@@ -54,7 +54,7 @@ export function PageHeader({
           <button
             type="button"
             onClick={onActionClick}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs cursor-pointer text-center"
           >
             <Plus className="w-4 h-4" />
             {actionText}

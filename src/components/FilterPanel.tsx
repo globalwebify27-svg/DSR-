@@ -46,8 +46,8 @@ export function FilterPanel({
 
   return (
     <div className="space-y-3">
-      {/* Interest Tabs */}
-      <div className="flex items-center gap-1 border-b border-[#E5E7EB] overflow-x-auto scrollbar-none pb-px">
+      {/* Interest Tabs with smooth horizontal touch scroll */}
+      <div className="flex items-center gap-1 border-b border-[#E5E7EB] overflow-x-auto pb-px -mx-2 px-2 sm:mx-0 sm:px-0">
         {INTEREST_TABS.map((tab) => {
           const isActive = currentInterest === tab;
           return (
@@ -55,7 +55,7 @@ export function FilterPanel({
               key={tab}
               type="button"
               onClick={() => onInterestChange(tab)}
-              className={`px-3.5 py-2 text-xs font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer ${
+              className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer shrink-0 ${
                 isActive
                   ? "border-[#FF5722] text-[#FF5722] font-semibold"
                   : "border-transparent text-[#737784] hover:text-[#171923] hover:border-gray-300"
@@ -69,7 +69,7 @@ export function FilterPanel({
 
       {/* Secondary Filter Dropdowns & Date */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <div className="flex items-center gap-1.5 text-[#737784] font-medium mr-1">
+        <div className="flex items-center gap-1.5 text-[#737784] font-medium mr-1 shrink-0">
           <Filter className="w-3.5 h-3.5" />
           <span>Filter:</span>
         </div>
@@ -78,7 +78,7 @@ export function FilterPanel({
         <select
           value={currentStatus}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer"
+          className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer grow sm:grow-0"
         >
           <option value="All">All Statuses</option>
           {STATUS_OPTIONS.filter((s) => s !== "All").map((status) => (
@@ -92,7 +92,7 @@ export function FilterPanel({
         <select
           value={currentOutletType}
           onChange={(e) => onOutletTypeChange(e.target.value)}
-          className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer"
+          className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer grow sm:grow-0"
         >
           <option value="All">All Outlet Types</option>
           {OUTLET_TYPES.filter((t) => t !== "All").map((type) => (
@@ -103,12 +103,12 @@ export function FilterPanel({
         </select>
 
         {/* Date Filter */}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center grow sm:grow-0">
           <input
             type="date"
             value={currentDate}
             onChange={(e) => onDateChange(e.target.value)}
-            className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md pl-2.5 pr-2 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer"
+            className="w-full sm:w-auto bg-[#F8F9FA] border border-[#E5E7EB] rounded-md pl-2.5 pr-2 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer"
           />
         </div>
 
@@ -117,7 +117,7 @@ export function FilterPanel({
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#737784] hover:text-[#171923] hover:bg-[#F3F4F6] rounded-md border border-[#E5E7EB] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#737784] hover:text-[#171923] hover:bg-[#F3F4F6] rounded-md border border-[#E5E7EB] transition-colors cursor-pointer ml-auto sm:ml-0"
             title="Reset filters"
           >
             <RotateCcw className="w-3 h-3" />

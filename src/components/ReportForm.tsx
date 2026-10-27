@@ -138,7 +138,6 @@ export function ReportForm({
     e.preventDefault();
     setErrorMsg(null);
 
-    // Validation
     if (!formData.firmName.trim()) {
       setErrorMsg("Firm Name is required.");
       return;
@@ -167,8 +166,12 @@ export function ReportForm({
     }
   };
 
+  // Base input class: text-base on mobile to prevent iOS Safari auto-zoom, text-xs on sm screens
+  const inputClass =
+    "w-full px-3 py-2.5 sm:py-2 text-base sm:text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-w-4xl pb-4">
       {errorMsg && (
         <div className="flex items-center gap-2 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
@@ -177,7 +180,7 @@ export function ReportForm({
       )}
 
       {/* Section 1: Outlet Details */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 shadow-2xs">
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
         <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
           <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
             1
@@ -188,7 +191,7 @@ export function ReportForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className="block text-xs font-medium text-[#171923] mb-1">
               Firm / Outlet Name <span className="text-[#FF5722]">*</span>
@@ -199,7 +202,7 @@ export function ReportForm({
               value={formData.firmName}
               onChange={handleChange}
               placeholder="e.g. Apex Supermarket"
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
               required
             />
           </div>
@@ -214,7 +217,7 @@ export function ReportForm({
               value={formData.ownerName}
               onChange={handleChange}
               placeholder="e.g. Rajesh Kumar"
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
               required
             />
           </div>
@@ -229,7 +232,7 @@ export function ReportForm({
               value={formData.mobileNumber}
               onChange={handleChange}
               placeholder="e.g. +91 98765 43210"
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
               required
             />
           </div>
@@ -242,7 +245,7 @@ export function ReportForm({
               name="outletType"
               value={formData.outletType}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             >
               {OUTLET_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -255,7 +258,7 @@ export function ReportForm({
       </div>
 
       {/* Section 2: Visit & Follow-up */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 shadow-2xs">
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
         <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
           <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
             2
@@ -266,7 +269,7 @@ export function ReportForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div>
             <label className="block text-xs font-medium text-[#171923] mb-1">
               Interest Level
@@ -275,7 +278,7 @@ export function ReportForm({
               name="interestLevel"
               value={formData.interestLevel}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             >
               {INTEREST_LEVELS.map((lvl) => (
                 <option key={lvl} value={lvl}>
@@ -293,7 +296,7 @@ export function ReportForm({
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             >
               <option value="Pending">Pending</option>
               <option value="In Progress">In Progress</option>
@@ -311,7 +314,7 @@ export function ReportForm({
               value={formData.quotePrice === null || formData.quotePrice === undefined ? "" : formData.quotePrice}
               onChange={handleChange}
               placeholder="e.g. 35000"
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             />
           </div>
 
@@ -324,7 +327,7 @@ export function ReportForm({
               name="followUpDate"
               value={formData.followUpDate || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             />
           </div>
 
@@ -338,7 +341,7 @@ export function ReportForm({
               value={formData.followUpTime || ""}
               onChange={handleChange}
               placeholder="e.g. 11:30 AM"
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             />
           </div>
 
@@ -350,7 +353,7 @@ export function ReportForm({
               name="standeeType"
               value={formData.standeeType || "None"}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+              className={inputClass}
             >
               {STANDEE_TYPES.map((st) => (
                 <option key={st} value={st}>
@@ -361,7 +364,7 @@ export function ReportForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
           <div>
             <label className="block text-xs font-medium text-[#171923] mb-1">
               Follow-up Remarks / Action Items
@@ -372,7 +375,7 @@ export function ReportForm({
               value={formData.followUpRemarks || ""}
               onChange={handleChange}
               placeholder="e.g. Owner requested catalog with organic tier pricing..."
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors resize-none"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
@@ -386,14 +389,14 @@ export function ReportForm({
               value={formData.feedback || ""}
               onChange={handleChange}
               placeholder="e.g. High footfall outlet, interested in counter unit..."
-              className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors resize-none"
+              className={`${inputClass} resize-none`}
             />
           </div>
         </div>
       </div>
 
       {/* Section 3: Media & Location */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 shadow-2xs">
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
         <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
           <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
             3
@@ -404,7 +407,7 @@ export function ReportForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           {/* Image Upload */}
           <div>
             <label className="block text-xs font-medium text-[#171923] mb-1">
@@ -420,17 +423,17 @@ export function ReportForm({
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, outletImage: null }))}
-                  className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
+                  className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1.5 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
                   title="Remove image"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-[#E5E7EB] rounded-md hover:border-[#FF5722]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
                 <Upload className="w-6 h-6 text-[#737784] mb-1.5" />
                 <span className="text-xs font-medium text-[#171923]">
-                  Click to upload outlet image
+                  Tap to capture or upload photo
                 </span>
                 <span className="text-[11px] text-[#737784] mt-0.5">
                   PNG, JPG or WEBP (Max 5MB)
@@ -451,18 +454,18 @@ export function ReportForm({
               <label className="block text-xs font-medium text-[#171923] mb-1">
                 GPS Location Capture
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCaptureLocation}
                   disabled={gpsLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[#F8F9FA] hover:bg-[#F3F4F6] text-[#171923] border border-[#E5E7EB] rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 text-xs font-medium bg-[#F8F9FA] hover:bg-[#F3F4F6] text-[#171923] border border-[#E5E7EB] rounded-md transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Navigation className={`w-3.5 h-3.5 text-[#FF5722] ${gpsLoading ? "animate-spin" : ""}`} />
                   {gpsLoading ? "Acquiring Coordinates..." : "Capture GPS Coordinates"}
                 </button>
                 {gpsSuccess && (
-                  <span className="inline-flex items-center text-xs text-emerald-600 font-medium gap-1">
+                  <span className="inline-flex items-center text-xs text-emerald-600 font-medium gap-1 self-start sm:self-center">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Captured
                   </span>
                 )}
@@ -486,7 +489,7 @@ export function ReportForm({
                 value={formData.locationAddress || ""}
                 onChange={handleChange}
                 placeholder="e.g. Connaught Place, Block B, New Delhi"
-                className="w-full px-3 py-2 text-xs bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[#171923] placeholder-[#737784] focus:outline-hidden focus:border-[#FF5722] focus:bg-white transition-colors"
+                className={inputClass}
               />
             </div>
           </div>
@@ -494,18 +497,18 @@ export function ReportForm({
       </div>
 
       {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-2">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-2">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 text-xs font-medium text-[#737784] hover:text-[#171923] bg-white border border-[#E5E7EB] rounded-md hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+          className="w-full sm:w-auto px-5 py-2.5 sm:py-2 text-xs font-medium text-[#737784] hover:text-[#171923] bg-white border border-[#E5E7EB] rounded-md hover:bg-[#F8F9FA] transition-colors cursor-pointer text-center"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-2.5 sm:py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs disabled:opacity-50 cursor-pointer text-center"
         >
           {isSubmitting
             ? "Saving Report..."
