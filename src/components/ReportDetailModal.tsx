@@ -115,22 +115,12 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
             <div className="p-3 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md flex items-start gap-2.5">
               <MapPin className="w-4 h-4 text-[#FF5722] shrink-0 mt-0.5" />
               <div>
-                <div className="font-semibold text-[#171923]">
-                  {report.locationAddress || "Captured GPS Coordinates"}
+                <span className="text-[11px] text-[#737784] font-medium block">
+                  Location Name:
+                </span>
+                <div className="font-semibold text-[#171923] text-xs mt-0.5">
+                  {report.locationAddress || "Captured Location"}
                 </div>
-                {report.latitude && report.longitude && (
-                  <div className="text-[#737784] mt-0.5 text-[11px]">
-                    Lat: {report.latitude.toFixed(5)}, Long: {report.longitude.toFixed(5)}{" "}
-                    <a
-                      href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#FF5722] hover:underline ml-1"
-                    >
-                      (View on Map)
-                    </a>
-                  </div>
-                )}
               </div>
             </div>
           )}

@@ -94,12 +94,45 @@ export function ReportForm({
     setErrorMsg(null);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        let detectedPlaceName = "Detected Location";
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.display_name) {
+              const addr = data.address || {};
+              const parts = [
+                addr.suburb || addr.neighbourhood || addr.road,
+                addr.city || addr.town || addr.county || addr.state_district,
+                addr.state,
+              ].filter(Boolean);
+              detectedPlaceName = parts.length > 0 ? parts.join(", ") : data.display_name;
+            }
+          }
+        } catch {
+          // If offline or network issue, fallback cleanly
+          detectedPlaceName = "Current GPS Location";
+        }
+
         setFormData((prev) => ({
           ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          locationAddress: prev.locationAddress || "Current GPS Location",
+          latitude: lat,
+          longitude: lon,
+          locationAddress: prev.locationAddress && prev.locationAddress !== "Current GPS Location"
+            ? prev.locationAddress
+            : detectedPlaceName,
         }));
         setGpsLoading(false);
         setGpsSuccess(true);
@@ -473,22 +506,31 @@ export function ReportForm({
             </div>
 
             {formData.latitude && formData.longitude && (
-              <div className="p-2.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-[11px] text-[#737784] space-y-0.5">
-                <div>Latitude: <span className="font-mono text-[#171923] font-medium">{formData.latitude.toFixed(6)}</span></div>
-                <div>Longitude: <span className="font-mono text-[#171923] font-medium">{formData.longitude.toFixed(6)}</span></div>
+              <div className="p-3 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-xs">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-[#FF5722] shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="text-[11px] text-[#737784] font-medium block">
+                      Location Name:
+                    </span>
+                    <span className="font-semibold text-[#171923] text-xs leading-snug block mt-0.5">
+                      {formData.locationAddress || "Locating place name..."}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
             <div>
               <label className="block text-xs font-medium text-[#171923] mb-1">
-                Location / Address Description
+                Location / Place Name
               </label>
               <input
                 type="text"
                 name="locationAddress"
                 value={formData.locationAddress || ""}
                 onChange={handleChange}
-                placeholder="e.g. Connaught Place, Block B, New Delhi"
+                placeholder="e.g. Kadru, Ranchi, Jharkhand"
                 className={inputClass}
               />
             </div>
