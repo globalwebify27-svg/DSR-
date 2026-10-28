@@ -3,6 +3,7 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { logoutAction } from "@/lib/auth";
 import {
   LayoutDashboard,
   FileText,
@@ -195,7 +196,9 @@ export function AppSidebar({ mobileOpen = false, onMobileClose }: AppSidebarProp
           </div>
           <button
             type="button"
-            onClick={() => alert("Logged out successfully.")}
+            onClick={async () => {
+              await logoutAction();
+            }}
             className="p-1 text-[#737784] hover:text-red-600 rounded transition-colors cursor-pointer"
             title="Logout"
           >

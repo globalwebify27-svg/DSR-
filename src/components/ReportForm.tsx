@@ -68,6 +68,7 @@ export function ReportForm({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsSuccess, setGpsSuccess] = useState(Boolean(initialData?.latitude));
@@ -147,24 +148,43 @@ export function ReportForm({
     );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg("Image size exceeds 5MB limit. Please select a smaller photo.");
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg("Image size exceeds 10MB limit. Please select a smaller photo.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
+    try {
+      setImageUploading(true);
+      setErrorMsg(null);
+
+      const body = new FormData();
+      body.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to upload image to Cloudinary");
+      }
+
       setFormData((prev) => ({
         ...prev,
-        outletImage: reader.result as string,
+        outletImage: data.url,
       }));
-      setErrorMsg(null);
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setErrorMsg(err?.message || "Failed to upload image.");
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -446,7 +466,17 @@ export function ReportForm({
             <label className="block text-xs font-medium text-[#171923] mb-1">
               Outlet Image Upload
             </label>
-            {formData.outletImage ? (
+            {imageUploading ? (
+              <div className="flex flex-col items-center justify-center h-36 border border-[#E5E7EB] rounded-md bg-[#F8F9FA] p-4 text-center">
+                <div className="w-6 h-6 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs font-medium text-[#171923]">
+                  Uploading to Cloudinary...
+                </span>
+                <span className="text-[11px] text-[#737784] mt-0.5">
+                  Optimizing and securing image CDN link
+                </span>
+              </div>
+            ) : formData.outletImage ? (
               <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 p-2">
                 <img
                   src={formData.outletImage}
@@ -469,7 +499,7 @@ export function ReportForm({
                   Tap to capture or upload photo
                 </span>
                 <span className="text-[11px] text-[#737784] mt-0.5">
-                  PNG, JPG or WEBP (Max 5MB)
+                  Uploads directly to Cloudinary (Max 10MB)
                 </span>
                 <input
                   type="file"
@@ -549,11 +579,13 @@ export function ReportForm({
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || imageUploading}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-2.5 sm:py-2 text-xs font-medium text-white bg-[#FF5722] hover:bg-[#E64A19] rounded-md transition-colors shadow-xs disabled:opacity-50 cursor-pointer text-center"
         >
           {isSubmitting
             ? "Saving Report..."
+            : imageUploading
+            ? "Uploading Photo..."
             : isEditing
             ? "Update Report"
             : "Save Report"}

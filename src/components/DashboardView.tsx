@@ -11,7 +11,8 @@ import {
   Eye,
   CheckCircle2,
   ChevronRight,
-  ArrowUpRight
+  ArrowUpRight,
+  Square
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { StatCard } from "./StatCard";
@@ -28,6 +29,7 @@ interface DashboardViewProps {
     todayFollowUps: ReportItem[];
     upcomingFollowUps: ReportItem[];
     todayDate: string;
+    error?: string;
   };
 }
 
@@ -59,6 +61,21 @@ export function DashboardView({ stats }: DashboardViewProps) {
         actionHref="/reports/new"
       />
 
+      {stats.error && (
+        <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-start gap-3">
+          <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 shrink-0 animate-pulse" />
+          <div className="text-sm space-y-1">
+            <p className="font-semibold">MongoDB Connection Pending</p>
+            <p className="text-amber-800 text-xs">
+              {stats.error}
+            </p>
+            <p className="text-xs text-amber-700 pt-1">
+              Please paste your MongoDB Atlas connection string into <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">.env.local</code> as <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">MONGODB_URI</code>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 3 Compact Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
@@ -80,6 +97,88 @@ export function DashboardView({ stats }: DashboardViewProps) {
           icon={Clock}
           subtitle="Active pipeline calls/visits"
         />
+      </div>
+
+      {/* Today's Follow-ups Section (Clean Table Card) */}
+      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-xs">
+        <div className="px-6 py-4 border-b border-[#E5E7EB]">
+          <h2 className="text-base sm:text-lg font-bold text-[#171923]">
+            Today&apos;s Follow-ups
+          </h2>
+        </div>
+
+        {todayFollowUps.length === 0 ? (
+          <div className="py-10 px-6 text-center text-xs text-[#737784]">
+            No follow-ups scheduled for today.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB] text-[#171923] text-xs sm:text-sm font-bold">
+                  <th className="py-3 px-6 whitespace-nowrap">Time</th>
+                  <th className="py-3 px-6 whitespace-nowrap">Firm/Owner</th>
+                  <th className="py-3 px-6 whitespace-nowrap">Mobile</th>
+                  <th className="py-3 px-6 whitespace-nowrap">Interested</th>
+                  <th className="py-3 px-6 whitespace-nowrap">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB] text-xs sm:text-sm">
+                {todayFollowUps.map((item) => {
+                  const firmOwnerText = [
+                    item.ownerName,
+                    item.firmName,
+                    item.locationAddress,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <tr
+                      key={`today-sec-${item.id}`}
+                      className="hover:bg-[#F9FAFB] transition-colors"
+                    >
+                      <td className="py-4 px-6 whitespace-nowrap font-medium text-[#171923]">
+                        {item.followUpTime || "—"}
+                      </td>
+                      <td className="py-4 px-6 text-[#171923] font-medium min-w-[240px]">
+                        {firmOwnerText || item.firmName}
+                      </td>
+                      <td className="py-4 px-6 whitespace-nowrap text-[#171923]">
+                        {item.mobileNumber}
+                      </td>
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        {item.interestLevel === "Interested" ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-[#0D8A50] text-white">
+                            Yes
+                          </span>
+                        ) : item.interestLevel === "Maybe" ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-500 text-white">
+                            Maybe
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-400 text-white">
+                            No
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReport(item)}
+                          className="bg-[#0066FF] hover:bg-[#0052CC] text-white text-xs font-semibold px-3 py-1.5 rounded-md inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Square className="w-3.5 h-3.5 stroke-[2.2]" />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Follow-up Section */}
