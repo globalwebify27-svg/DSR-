@@ -23,6 +23,7 @@ export interface ReportItem {
   outletType: string;
   interestLevel: string;
   status: string;
+  reportedBy?: string;
   quotePrice?: number | null;
   followUpDate?: string | null;
   followUpTime?: string | null;
@@ -88,6 +89,11 @@ export function DataTable({
                 <p className="text-xs text-[#737784] mt-0.5">
                   {report.ownerName} • <span className="font-medium text-[#4B5563]">{report.outletType}</span>
                 </p>
+                {report.reportedBy && (
+                  <p className="text-[10px] text-[#9CA3AF] mt-0.5">
+                    Added by: <span className="font-medium text-[#4B5563]">{report.reportedBy}</span>
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-1">
                 <StatusBadge type="interest" value={report.interestLevel} />
@@ -222,6 +228,12 @@ export function DataTable({
                       <div className="text-[#737784] text-xs mt-0.5">
                         {report.ownerName}
                       </div>
+                      {report.reportedBy && (
+                        <div className="text-[10px] text-[#9CA3AF] mt-0.5 flex items-center gap-1">
+                          <span>By:</span>
+                          <span className="font-medium text-[#4B5563]">{report.reportedBy}</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Mobile */}

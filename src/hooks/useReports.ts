@@ -11,6 +11,7 @@ export interface UseReportsProps {
   initialPage: number;
   initialLimit: number;
   initialTotalPages: number;
+  initialExecutives?: string[];
 }
 
 export function useReports({
@@ -19,6 +20,7 @@ export function useReports({
   initialPage,
   initialLimit,
   initialTotalPages,
+  initialExecutives = [],
 }: UseReportsProps) {
   const router = useRouter();
 
@@ -28,6 +30,8 @@ export function useReports({
   const [status, setStatus] = useState("All");
   const [outletType, setOutletType] = useState("All");
   const [date, setDate] = useState("");
+  const [executive, setExecutive] = useState("All");
+  const [executiveOptions] = useState<string[]>(initialExecutives);
   const [page, setPage] = useState(initialPage);
 
   const [reports, setReports] = useState<ReportItem[]>(initialReports);
@@ -48,6 +52,7 @@ export function useReports({
           status,
           outletType,
           date,
+          executive,
         });
         setReports(res.reports);
         setTotal(res.total);
@@ -56,7 +61,7 @@ export function useReports({
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [search, interest, status, outletType, date, page, initialLimit]);
+  }, [search, interest, status, outletType, date, executive, page, initialLimit]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     await updateReportStatus(id, newStatus);
@@ -77,6 +82,7 @@ export function useReports({
     setStatus("All");
     setOutletType("All");
     setDate("");
+    setExecutive("All");
     setPage(1);
     router.replace("/reports");
   };
@@ -101,6 +107,11 @@ export function useReports({
     setPage(1);
   };
 
+  const handleExecutiveChange = (val: string) => {
+    setExecutive(val);
+    setPage(1);
+  };
+
   const handleDateChange = (val: string) => {
     setDate(val);
     setPage(1);
@@ -118,12 +129,15 @@ export function useReports({
     interest,
     status,
     outletType,
+    executive,
+    executiveOptions,
     date,
     setPage,
     handleSearchChange,
     handleInterestChange,
     handleStatusFilterChange,
     handleOutletTypeChange,
+    handleExecutiveChange,
     handleDateChange,
     handleStatusChange,
     handleDelete,

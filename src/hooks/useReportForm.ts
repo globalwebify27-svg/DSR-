@@ -19,6 +19,7 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     outletType: initialData?.outletType || "Retail",
     interestLevel: initialData?.interestLevel || "Interested",
     status: initialData?.status || "Pending",
+    reportedBy: initialData?.reportedBy || "",
     quotePrice: initialData?.quotePrice || null,
     followUpDate: initialData?.followUpDate || "",
     followUpTime: initialData?.followUpTime || "",
@@ -43,6 +44,15 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     >
   ) => {
     const { name, value } = e.target;
+    if (name === "mobileNumber") {
+      // Allow only numbers and limit input to maximum 10 digits
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        mobileNumber: digitsOnly,
+      }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: name === "quotePrice" ? (value === "" ? null : Number(value)) : value,
@@ -212,11 +222,37 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
       setErrorMsg("Mobile Number is required.");
       return;
     }
+    if (formData.mobileNumber.length !== 10) {
+      setErrorMsg("Mobile number must be exactly 10 digits.");
+      return;
+    }
+    if (!formData.reportedBy?.trim()) {
+      setErrorMsg("Sales Executive name is mandatory. Please enter who recorded this report.");
+      return;
+    }
+    if (!formData.outletImage) {
+      setErrorMsg("Outlet storefront photo is mandatory. Please capture or upload an image.");
+      return;
+    }
+    if (
+      formData.latitude === null ||
+      formData.latitude === undefined ||
+      formData.longitude === null ||
+      formData.longitude === undefined
+    ) {
+      setErrorMsg("GPS Location is mandatory. Please click 'Capture GPS Coordinates' or pin on the map.");
+      return;
+    }
+    if (!formData.locationAddress?.trim()) {
+      setErrorMsg("Location / Place Name is mandatory.");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       const res = await onSubmit(formData);
       if (res.success) {
+        router.refresh();
         router.push("/reports");
       } else {
         setErrorMsg(res.error || "Failed to save report.");

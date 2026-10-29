@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { X, MapPin, Calendar, Clock, DollarSign, Phone, User, Flag } from "lucide-react";
+import { X, MapPin, Calendar, Clock, DollarSign, Phone, User, Flag, UserCheck } from "lucide-react";
 import { ReportItem } from "./DataTable";
 import { StatusBadge } from "./StatusBadge";
 
@@ -90,6 +90,13 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                 {report.followUpTime || "—"}
               </span>
             </div>
+            <div className="sm:col-span-2 pt-2 border-t border-gray-200/60">
+              <span className="text-[#737784] block mb-0.5 font-medium">Report Added By / Executive</span>
+              <span className="text-[#171923] font-semibold flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-[#FF5722]" />
+                {report.reportedBy || "—"}
+              </span>
+            </div>
           </div>
 
           {/* Remarks & Feedback */}
@@ -133,7 +140,7 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                       rel="noopener noreferrer"
                       className="text-[10px] text-[#FF5722] hover:underline font-medium inline-flex items-center gap-0.5"
                     >
-                      Open in Maps ↗
+                      Open in Google Maps ↗
                     </a>
                   </div>
                 )}

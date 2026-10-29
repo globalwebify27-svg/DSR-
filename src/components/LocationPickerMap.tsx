@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { MapPin, Navigation, Loader2 } from "lucide-react";
+import { MapPin, Navigation, Loader2, ExternalLink } from "lucide-react";
 
 interface LocationPickerMapProps {
   latitude?: number | null;
@@ -46,6 +46,7 @@ interface LeafletDivIconOptions {
 
 interface LeafletTileLayer {
   addTo: (map: LeafletMap) => LeafletTileLayer;
+  remove: () => void;
 }
 
 interface LeafletRoot {
@@ -69,7 +70,9 @@ export function LocationPickerMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
+  const tileLayerRef = useRef<LeafletTileLayer | null>(null);
 
+  const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -166,14 +169,21 @@ export function LocationPickerMap({
           zoom: hasCoords ? 16 : 12,
           scrollWheelZoom: false, // Prevent page scroll entrapment
           zoomControl: false, // Custom zoom buttons provided below
+          attributionControl: false, // Remove default Leaflet branding & flag
         });
 
-        // Add OpenStreetMap tile layer
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
-        }).addTo(map);
+        // Add Google Maps tile layer (roadmap default)
+        const googleTileLayer = L.tileLayer(
+          "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+          {
+            maxZoom: 20,
+            subdomains: ["mt0", "mt1", "mt2", "mt3"],
+            attribution:
+              '&copy; <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Google Maps</a>',
+          }
+        ).addTo(map);
 
+        tileLayerRef.current = googleTileLayer;
         mapInstanceRef.current = map;
 
         // Custom marker pin
@@ -243,10 +253,35 @@ export function LocationPickerMap({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markerRef.current = null;
+        tileLayerRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Switch Google Maps layer when mapType toggles between roadmap and satellite hybrid
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const L = getGlobalLeaflet();
+    if (!map || !L) return;
+
+    if (tileLayerRef.current) {
+      tileLayerRef.current.remove();
+    }
+
+    const lyrs = mapType === "roadmap" ? "m" : "y";
+    const newTiles = L.tileLayer(
+      `https://{s}.google.com/vt/lyrs=${lyrs}&x={x}&y={y}&z={z}`,
+      {
+        maxZoom: 20,
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        attribution:
+          '&copy; <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Google Maps</a>',
+      }
+    ).addTo(map);
+
+    tileLayerRef.current = newTiles;
+  }, [mapType]);
 
   // Update marker position and center map when latitude/longitude props change externally
   useEffect(() => {
@@ -340,45 +375,96 @@ export function LocationPickerMap({
       </div>
 
       {/* Map Action Controls (Top-Right) */}
-      <div className="absolute top-2 right-2 z-10 flex flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={handleLocateMe}
-          disabled={locating}
-          title="Locate my position"
-          className="w-7 h-7 bg-white hover:bg-gray-50 text-[#171923] rounded-md shadow-xs border border-[#E5E7EB] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <Navigation className={`w-3.5 h-3.5 text-[#FF5722] ${locating ? "animate-spin" : ""}`} />
-        </button>
+      <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1.5">
+        {/* Layer Mode Toggle (Map vs Satellite) */}
+        <div className="bg-white/95 backdrop-blur-xs rounded-md shadow-xs border border-[#E5E7EB] flex p-0.5">
+          <button
+            type="button"
+            onClick={() => setMapType("roadmap")}
+            className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer transition-colors ${
+              mapType === "roadmap"
+                ? "bg-[#FF5722] text-white shadow-2xs"
+                : "text-[#737784] hover:text-[#171923]"
+            }`}
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapType("satellite")}
+            className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer transition-colors ${
+              mapType === "satellite"
+                ? "bg-[#FF5722] text-white shadow-2xs"
+                : "text-[#737784] hover:text-[#171923]"
+            }`}
+          >
+            Satellite
+          </button>
+        </div>
 
-        <div className="bg-white rounded-md shadow-xs border border-[#E5E7EB] flex flex-col overflow-hidden">
+        <div className="flex flex-col gap-1.5">
           <button
             type="button"
-            onClick={handleZoomIn}
-            title="Zoom In"
-            className="w-7 h-7 hover:bg-gray-50 text-[#171923] font-bold text-xs flex items-center justify-center border-b border-[#E5E7EB] transition-colors cursor-pointer"
+            onClick={handleLocateMe}
+            disabled={locating}
+            title="Locate my position"
+            className="w-7 h-7 bg-white hover:bg-gray-50 text-[#171923] rounded-md shadow-xs border border-[#E5E7EB] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
           >
-            +
+            <Navigation className={`w-3.5 h-3.5 text-[#FF5722] ${locating ? "animate-spin" : ""}`} />
           </button>
-          <button
-            type="button"
-            onClick={handleZoomOut}
-            title="Zoom Out"
-            className="w-7 h-7 hover:bg-gray-50 text-[#171923] font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
-          >
-            &minus;
-          </button>
+
+          {hasCoords && (
+            <a
+              href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open location in Google Maps"
+              className="w-7 h-7 bg-white hover:bg-gray-50 text-[#171923] rounded-md shadow-xs border border-[#E5E7EB] flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#737784] hover:text-[#FF5722]" />
+            </a>
+          )}
+
+          <div className="bg-white rounded-md shadow-xs border border-[#E5E7EB] flex flex-col overflow-hidden">
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              title="Zoom In"
+              className="w-7 h-7 hover:bg-gray-50 text-[#171923] font-bold text-xs flex items-center justify-center border-b border-[#E5E7EB] transition-colors cursor-pointer"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              className="w-7 h-7 hover:bg-gray-50 text-[#171923] font-bold text-xs flex items-center justify-center transition-colors cursor-pointer"
+            >
+              &minus;
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Bottom Hint */}
-      {hasCoords && (
-        <div className="absolute bottom-1.5 left-2 z-10 pointer-events-none">
-          <span className="bg-white/90 backdrop-blur-2xs px-2 py-0.5 rounded text-[10px] text-[#737784] border border-[#E5E7EB]">
-            💡 Drag pin or click anywhere to adjust
-          </span>
+      {/* Google Maps Brand Badge & Drag Hint */}
+      <div className="absolute bottom-1.5 left-2 z-10 pointer-events-none">
+        <div className="bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded shadow-2xs border border-[#E5E7EB] flex items-center gap-1.5 text-[10px] font-medium text-[#4B5563]">
+          <span className="font-bold text-[#EA4335]">G</span>
+          <span className="font-semibold text-[#171923]">Google Maps</span>
+          {hasCoords && (
+            <span className="text-[#737784] border-l border-gray-200 pl-1.5 hidden sm:inline">
+              Drag pin or click to adjust
+            </span>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Bottom Right Google Attribution (replaces Leaflet flag/text) */}
+      <div className="absolute bottom-1.5 right-2 z-10 pointer-events-none">
+        <span className="text-[10px] text-[#4B5563] bg-white/90 backdrop-blur-xs px-1.5 py-0.5 rounded shadow-2xs border border-[#E5E7EB] font-medium">
+          &copy; Google Maps
+        </span>
+      </div>
 
       {/* Loading Overlay */}
       {isLoading && (

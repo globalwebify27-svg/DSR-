@@ -38,3 +38,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #D1D5DB;
 }
+
+/* Hide default Leaflet branding bar and flag */
+.leaflet-control-attribution {
+  display: none !important;
+}

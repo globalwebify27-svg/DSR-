@@ -6,6 +6,10 @@ export const OUTLET_TYPES = [
   "Distributor",
   "Supermarket",
   "Pharmacy",
+  "Hospital",
+  "School",
+  "Clinic",
+  "Clinics",
   "Other",
 ] as const;
 
@@ -43,9 +47,7 @@ export const reportInputSchema = z.object({
   mobileNumber: z
     .string()
     .trim()
-    .min(5, "Mobile number is required.")
-    .max(25, "Mobile number cannot exceed 25 characters.")
-    .regex(/^[+\d\s\-()]+$/, "Mobile number contains invalid characters."),
+    .regex(/^\d{10}$/, "Mobile number must be exactly 10 digits."),
   outletType: z.enum(OUTLET_TYPES, {
     message: "Invalid outlet type.",
   }).default("Retail"),
@@ -55,6 +57,11 @@ export const reportInputSchema = z.object({
   status: z.enum(REPORT_STATUSES, {
     message: "Invalid status value.",
   }).default("Pending"),
+  reportedBy: z
+    .string()
+    .trim()
+    .min(1, "Sales Executive name is required.")
+    .max(100, "Executive name cannot exceed 100 characters."),
   quotePrice: z
     .number()
     .min(0, "Quote price cannot be negative.")
@@ -80,16 +87,22 @@ export const reportInputSchema = z.object({
     .optional(),
   outletImage: z
     .string()
-    .max(2048, "Image URL is too long.")
-    .nullable()
-    .optional(),
-  latitude: z.number().min(-90).max(90).nullable().optional(),
-  longitude: z.number().min(-180).max(180).nullable().optional(),
+    .trim()
+    .min(1, "Outlet storefront image is required.")
+    .max(2048, "Image URL is too long."),
+  latitude: z
+    .number()
+    .min(-90, "Latitude must be between -90 and 90.")
+    .max(90, "Latitude must be between -90 and 90."),
+  longitude: z
+    .number()
+    .min(-180, "Longitude must be between -180 and 180.")
+    .max(180, "Longitude must be between -180 and 180."),
   locationAddress: z
     .string()
-    .max(300, "Location address cannot exceed 300 characters.")
-    .nullable()
-    .optional(),
+    .trim()
+    .min(1, "Location / Place Name is required.")
+    .max(300, "Location address cannot exceed 300 characters."),
 });
 
 export type ValidatedReportInput = z.infer<typeof reportInputSchema>;

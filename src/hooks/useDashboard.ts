@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ReportItem } from "@/components/DataTable";
 import { updateReportStatus } from "@/lib/actions";
 
@@ -24,6 +24,8 @@ export function useDashboard(stats: DashboardStats) {
   const [selectedCard, setSelectedCard] = useState<StatCardView>("total");
   const [upcomingTab, setUpcomingTab] = useState<UpcomingTab>("all");
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
+  const [selectedExecutive, setSelectedExecutive] = useState<string>("All");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const [allReports, setAllReports] = useState<ReportItem[]>(
     stats.allReports || []
@@ -41,6 +43,16 @@ export function useDashboard(stats: DashboardStats) {
     stats.upcomingFollowUps || []
   );
 
+  // Extract unique executives dynamically across all loaded reports
+  const executives = useMemo(() => {
+    const set = new Set<string>();
+    allReports.forEach((r) => {
+      const exec = r.reportedBy?.trim();
+      if (exec) set.add(exec);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [allReports]);
+
   const handleQuickStatus = async (id: string, newStatus: string) => {
     await updateReportStatus(id, newStatus);
     const updateFn = (prev: ReportItem[]) =>
@@ -53,7 +65,7 @@ export function useDashboard(stats: DashboardStats) {
     setUpcomingFollowUps(updateFn);
   };
 
-  const currentList =
+  const rawList =
     selectedCard === "total"
       ? allReports
       : selectedCard === "interested"
@@ -64,12 +76,57 @@ export function useDashboard(stats: DashboardStats) {
       ? todayFollowUps
       : upcomingFollowUps;
 
-  const exportTitle =
-    selectedCard === "total"
-      ? "Total Reports Summary"
-      : selectedCard === "interested"
-      ? "Interested Outlets Report"
-      : "Upcoming Follow-ups Schedule";
+  // Filter current active view by selected executive and search query
+  const currentList = useMemo(() => {
+    let list = rawList;
+    if (selectedExecutive !== "All") {
+      list = list.filter(
+        (item) => item.reportedBy?.trim() === selectedExecutive
+      );
+    }
+    if (searchTerm.trim()) {
+      const q = searchTerm.trim().toLowerCase();
+      list = list.filter((item) => {
+        const firm = item.firmName?.toLowerCase() || "";
+        const owner = item.ownerName?.toLowerCase() || "";
+        const mobile = item.mobileNumber?.toLowerCase() || "";
+        const exec = item.reportedBy?.toLowerCase() || "";
+        const type = item.outletType?.toLowerCase() || "";
+        const location = item.locationAddress?.toLowerCase() || "";
+        const notes = item.feedback?.toLowerCase() || "";
+        const remarks = item.followUpRemarks?.toLowerCase() || "";
+        return (
+          firm.includes(q) ||
+          owner.includes(q) ||
+          mobile.includes(q) ||
+          exec.includes(q) ||
+          type.includes(q) ||
+          location.includes(q) ||
+          notes.includes(q) ||
+          remarks.includes(q)
+        );
+      });
+    }
+    return list;
+  }, [rawList, selectedExecutive, searchTerm]);
+
+  const exportTitle = useMemo(() => {
+    const base =
+      selectedCard === "total"
+        ? "Total Reports"
+        : selectedCard === "interested"
+        ? "Interested Outlets"
+        : "Upcoming Follow-ups";
+
+    const parts: string[] = [base];
+    if (selectedExecutive !== "All") {
+      parts.push(`Executive: ${selectedExecutive}`);
+    }
+    if (searchTerm.trim()) {
+      parts.push(`Search: "${searchTerm.trim()}"`);
+    }
+    return parts.join(" — ");
+  }, [selectedCard, selectedExecutive, searchTerm]);
 
   const filenamePrefix =
     selectedCard === "total"
@@ -94,6 +151,12 @@ export function useDashboard(stats: DashboardStats) {
     setUpcomingTab,
     selectedReport,
     setSelectedReport,
+    selectedExecutive,
+    setSelectedExecutive,
+    searchTerm,
+    setSearchTerm,
+    executives,
+    rawListCount: rawList.length,
     currentList,
     allReports,
     interestedReports,

@@ -16,6 +16,7 @@ export function exportToExcel(
     "S.No": idx + 1,
     "Firm Name": item.firmName || "",
     "Owner Name": item.ownerName || "",
+    "Reported By": item.reportedBy || "",
     "Mobile Number": item.mobileNumber || "",
     "Outlet Type": item.outletType || "",
     "Interest Level": item.interestLevel || "",
@@ -38,6 +39,7 @@ export function exportToExcel(
     { wch: 6 }, // S.No
     { wch: 22 }, // Firm Name
     { wch: 20 }, // Owner Name
+    { wch: 18 }, // Reported By
     { wch: 15 }, // Mobile
     { wch: 14 }, // Outlet Type
     { wch: 15 }, // Interest Level
@@ -115,6 +117,7 @@ export function exportToPDF(
       "#",
       "Firm Name",
       "Owner",
+      "Reported By",
       "Mobile",
       "Outlet",
       "Interest",
@@ -130,6 +133,7 @@ export function exportToPDF(
     idx + 1,
     item.firmName || "—",
     item.ownerName || "—",
+    item.reportedBy || "—",
     item.mobileNumber || "—",
     item.outletType || "—",
     item.interestLevel || "—",
@@ -170,16 +174,17 @@ export function exportToPDF(
     },
     columnStyles: {
       0: { cellWidth: 20, halign: "center" }, // #
-      1: { cellWidth: 95 }, // Firm
-      2: { cellWidth: 80 }, // Owner
-      3: { cellWidth: 70 }, // Mobile
-      4: { cellWidth: 55 }, // Outlet
-      5: { cellWidth: 60 }, // Interest
-      6: { cellWidth: 60 }, // Status
-      7: { cellWidth: 45 }, // Quote
-      8: { cellWidth: 65 }, // Date
-      9: { cellWidth: 45 }, // Time
-      10: { cellWidth: "auto" }, // Feedback
+      1: { cellWidth: 90 }, // Firm
+      2: { cellWidth: 70 }, // Owner
+      3: { cellWidth: 65 }, // Reported By
+      4: { cellWidth: 65 }, // Mobile
+      5: { cellWidth: 50 }, // Outlet
+      6: { cellWidth: 55 }, // Interest
+      7: { cellWidth: 55 }, // Status
+      8: { cellWidth: 40 }, // Quote
+      9: { cellWidth: 60 }, // Date
+      10: { cellWidth: 40 }, // Time
+      11: { cellWidth: "auto" }, // Feedback
     },
     didDrawPage: (data) => {
       // Footer page numbers

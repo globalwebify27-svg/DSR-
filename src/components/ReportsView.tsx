@@ -26,11 +26,14 @@ export function ReportsView(props: UseReportsProps) {
     status,
     outletType,
     date,
+    executive,
+    executiveOptions,
     setPage,
     handleSearchChange,
     handleInterestChange,
     handleStatusFilterChange,
     handleOutletTypeChange,
+    handleExecutiveChange,
     handleDateChange,
     handleStatusChange,
     handleDelete,
@@ -79,6 +82,9 @@ export function ReportsView(props: UseReportsProps) {
           onOutletTypeChange={handleOutletTypeChange}
           currentDate={date}
           onDateChange={handleDateChange}
+          currentExecutive={executive}
+          onExecutiveChange={handleExecutiveChange}
+          executiveOptions={executiveOptions}
           onReset={handleResetFilters}
         />
       </div>

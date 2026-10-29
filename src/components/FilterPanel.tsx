@@ -12,6 +12,9 @@ interface FilterPanelProps {
   onOutletTypeChange: (type: string) => void;
   currentDate: string;
   onDateChange: (date: string) => void;
+  currentExecutive?: string;
+  onExecutiveChange?: (executive: string) => void;
+  executiveOptions?: string[];
   onReset: () => void;
 }
 
@@ -24,6 +27,10 @@ const OUTLET_TYPES = [
   "Distributor",
   "Supermarket",
   "Pharmacy",
+  "Hospital",
+  "School",
+  "Clinic",
+  "Clinics",
   "Other",
 ];
 
@@ -36,12 +43,16 @@ export function FilterPanel({
   onOutletTypeChange,
   currentDate,
   onDateChange,
+  currentExecutive = "All",
+  onExecutiveChange,
+  executiveOptions = [],
   onReset,
 }: FilterPanelProps) {
   const hasActiveFilters =
     currentInterest !== "All" ||
     currentStatus !== "All" ||
     currentOutletType !== "All" ||
+    (currentExecutive && currentExecutive !== "All") ||
     Boolean(currentDate);
 
   return (
@@ -101,6 +112,22 @@ export function FilterPanel({
             </option>
           ))}
         </select>
+
+        {/* Executive Dropdown */}
+        {onExecutiveChange && (
+          <select
+            value={currentExecutive}
+            onChange={(e) => onExecutiveChange(e.target.value)}
+            className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 text-xs text-[#171923] focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer grow sm:grow-0"
+          >
+            <option value="All">All Executives</option>
+            {executiveOptions.map((exec) => (
+              <option key={exec} value={exec}>
+                Executive: {exec}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Date Filter */}
         <div className="relative flex items-center grow sm:grow-0">

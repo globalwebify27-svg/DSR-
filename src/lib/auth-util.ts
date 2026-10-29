@@ -95,3 +95,13 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
 
   return true;
 }
+
+export function getSessionUserFromToken(token?: string | null): string | null {
+  if (!token || typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const data = parts[0];
+  const lastColonIndex = data.lastIndexOf(":");
+  if (lastColonIndex === -1) return null;
+  return data.substring(0, lastColonIndex) || null;
+}

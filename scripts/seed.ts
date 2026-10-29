@@ -36,7 +36,8 @@ const seedReports = [
   {
     firmName: "Apex Retail Mart",
     ownerName: "Rajesh Kumar",
-    mobileNumber: "+91 98765 43210",
+    reportedBy: "Rohan Verma",
+    mobileNumber: "9876543210",
     outletType: "Supermarket",
     interestLevel: "Interested",
     status: "In Progress",
@@ -53,7 +54,8 @@ const seedReports = [
   {
     firmName: "Metro Meds & Healthcare",
     ownerName: "Dr. Sunita Sharma",
-    mobileNumber: "+91 98111 22334",
+    reportedBy: "Priya Singh",
+    mobileNumber: "9811122334",
     outletType: "Pharmacy",
     interestLevel: "Interested",
     status: "Pending",
@@ -70,7 +72,8 @@ const seedReports = [
   {
     firmName: "Starline Distributors",
     ownerName: "Vikram Malhotra",
-    mobileNumber: "+91 98222 33445",
+    reportedBy: "Amit Sharma",
+    mobileNumber: "9822233445",
     outletType: "Distributor",
     interestLevel: "Interested",
     status: "In Progress",
@@ -87,7 +90,8 @@ const seedReports = [
   {
     firmName: "Gupta General Stores",
     ownerName: "Manoj Gupta",
-    mobileNumber: "+91 97333 44556",
+    reportedBy: "Deepak Joshi",
+    mobileNumber: "9733344556",
     outletType: "Retail",
     interestLevel: "Maybe",
     status: "Pending",
@@ -104,7 +108,7 @@ const seedReports = [
   {
     firmName: "Urban Mart Daily",
     ownerName: "Ananya Deshmukh",
-    mobileNumber: "+91 99444 55667",
+    mobileNumber: "9944455667",
     outletType: "Supermarket",
     interestLevel: "Interested",
     status: "Completed",
@@ -121,7 +125,7 @@ const seedReports = [
   {
     firmName: "Sharma Electronics & Goods",
     ownerName: "Deepak Sharma",
-    mobileNumber: "+91 98555 66778",
+    mobileNumber: "9855566778",
     outletType: "Wholesale",
     interestLevel: "Not Interested",
     status: "Completed",
@@ -138,7 +142,7 @@ const seedReports = [
   {
     firmName: "Prime Care Chemists",
     ownerName: "Rakesh Verma",
-    mobileNumber: "+91 98666 77889",
+    mobileNumber: "9866677889",
     outletType: "Pharmacy",
     interestLevel: "Maybe",
     status: "Pending",
@@ -155,7 +159,7 @@ const seedReports = [
   {
     firmName: "Green Valley Organics",
     ownerName: "Pooja Hegde",
-    mobileNumber: "+91 98777 88990",
+    mobileNumber: "9877788990",
     outletType: "Retail",
     interestLevel: "Interested",
     status: "In Progress",

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { logoutAction } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/actions";
 import {
   LayoutDashboard,
   FileText,
@@ -136,6 +137,55 @@ function SidebarNavContent({ onMobileClose }: { onMobileClose?: () => void }) {
   );
 }
 
+function UserFooter() {
+  const [userName, setUserName] = useState<string>("Sales Executive");
+
+  useEffect(() => {
+    getCurrentUser().then((res) => {
+      if (res?.username) {
+        setUserName(res.username);
+      }
+    });
+  }, []);
+
+  const initials =
+    userName
+      .split(" ")
+      .map((p) => p[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "SE";
+
+  return (
+    <div className="pt-2 mt-2 border-t border-[#E5E7EB] flex items-center justify-between px-2">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-[#FFF3E0] border border-orange-200 flex items-center justify-center text-xs font-semibold text-[#FF5722]">
+          {initials}
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-[#171923] leading-tight capitalize">
+            {userName}
+          </span>
+          <span className="text-[10px] text-[#737784] leading-tight">
+            Sales Executive
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={async () => {
+          await logoutAction();
+        }}
+        className="p-1 text-[#737784] hover:text-red-600 rounded transition-colors cursor-pointer"
+        title="Logout"
+      >
+        <LogOut className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 export function AppSidebar({ mobileOpen = false, onMobileClose }: AppSidebarProps) {
   const content = (
     <div className="flex flex-col h-full bg-white border-r border-[#E5E7EB] w-64 select-none">
@@ -189,31 +239,7 @@ export function AppSidebar({ mobileOpen = false, onMobileClose }: AppSidebarProp
           <span>Help & Support</span>
         </button>
 
-        <div className="pt-2 mt-2 border-t border-[#E5E7EB] flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-xs font-semibold text-[#171923]">
-              OK
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-[#171923] leading-tight">
-                Om Kumar
-              </span>
-              <span className="text-[10px] text-[#737784] leading-tight">
-                Sales Lead
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={async () => {
-              await logoutAction();
-            }}
-            className="p-1 text-[#737784] hover:text-red-600 rounded transition-colors cursor-pointer"
-            title="Logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+        <UserFooter />
       </div>
     </div>
   );

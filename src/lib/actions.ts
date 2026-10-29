@@ -6,7 +6,7 @@ import { unstable_cache } from "next/cache";
 import { connectDB } from "@/lib/mongodb";
 import { Report } from "@/models/Report";
 import { ReportItem } from "@/components/DataTable";
-import { COOKIE_NAME, verifySessionToken } from "@/lib/auth-util";
+import { COOKIE_NAME, verifySessionToken, getSessionUserFromToken } from "@/lib/auth-util";
 import { revalidatePath, updateTag } from "next/cache";
 import { reportInputSchema } from "@/lib/validations";
 
@@ -17,6 +17,7 @@ export interface ReportFormData {
   outletType: string;
   interestLevel: string;
   status?: string;
+  reportedBy?: string;
   quotePrice?: number | null;
   followUpDate?: string | null;
   followUpTime?: string | null;
@@ -39,6 +40,17 @@ async function requireAuth() {
   }
 }
 
+export async function getCurrentUser(): Promise<{ username: string }> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(COOKIE_NAME)?.value;
+    const username = getSessionUserFromToken(token);
+    return { username: username || "Sales Executive" };
+  } catch {
+    return { username: "Sales Executive" };
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeReport(doc: any): ReportItem {
   return {
@@ -49,6 +61,7 @@ function serializeReport(doc: any): ReportItem {
     outletType: doc.outletType,
     interestLevel: doc.interestLevel,
     status: doc.status || "Pending",
+    reportedBy: doc.reportedBy || undefined,
     quotePrice: doc.quotePrice ?? null,
     followUpDate: doc.followUpDate ?? null,
     followUpTime: doc.followUpTime ?? null,
@@ -146,6 +159,24 @@ export async function getDashboardStats() {
   return cachedFetch();
 }
 
+export async function getExecutives(): Promise<string[]> {
+  await requireAuth();
+  try {
+    await connectDB();
+    const raw: string[] = await Report.distinct("reportedBy");
+    const set = new Set<string>();
+    raw.forEach((name) => {
+      if (name && typeof name === "string" && name.trim()) {
+        set.add(name.trim());
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  } catch (e) {
+    console.error("Error fetching executives:", e);
+    return [];
+  }
+}
+
 export async function getReports({
   page = 1,
   limit = 10,
@@ -154,6 +185,7 @@ export async function getReports({
   status = "All",
   outletType = "All",
   date = "",
+  executive = "All",
 }: {
   page?: number;
   limit?: number;
@@ -162,6 +194,7 @@ export async function getReports({
   status?: string;
   outletType?: string;
   date?: string;
+  executive?: string;
 }) {
   await requireAuth();
 
@@ -172,33 +205,47 @@ export async function getReports({
         const skip = (page - 1) * limit;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const query: any = {};
+        const conditions: any[] = [];
 
         if (typeof search === "string" && search.trim()) {
           const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           const regex = new RegExp(escaped, "i");
-          query.$or = [
-            { firmName: regex },
-            { ownerName: regex },
-            { mobileNumber: regex },
-          ];
+          conditions.push({
+            $or: [
+              { firmName: regex },
+              { ownerName: regex },
+              { mobileNumber: regex },
+              { reportedBy: regex },
+            ],
+          });
         }
 
         if (typeof interest === "string" && interest && interest !== "All") {
-          query.interestLevel = interest;
+          conditions.push({ interestLevel: interest });
         }
 
         if (typeof status === "string" && status && status !== "All") {
-          query.status = status;
+          conditions.push({ status: status });
         }
 
         if (typeof outletType === "string" && outletType && outletType !== "All") {
-          query.outletType = outletType;
+          conditions.push({ outletType: outletType });
         }
 
         if (typeof date === "string" && date) {
-          query.followUpDate = date;
+          conditions.push({ followUpDate: date });
         }
+
+        if (typeof executive === "string" && executive && executive !== "All") {
+          conditions.push({ reportedBy: executive });
+        }
+
+        const query =
+          conditions.length === 0
+            ? {}
+            : conditions.length === 1
+            ? conditions[0]
+            : { $and: conditions };
 
         const [rawReports, total] = await Promise.all([
           Report.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
@@ -227,7 +274,7 @@ export async function getReports({
         };
       }
     },
-    ["reports", String(page), String(limit), search, interest, status, outletType, date],
+    ["reports", String(page), String(limit), search, interest, status, outletType, date, executive],
     { revalidate: 30, tags: ["reports"] }
   );
 
@@ -259,6 +306,7 @@ export async function createReport(data: ReportFormData) {
     outletType: validated.outletType,
     interestLevel: validated.interestLevel,
     status: validated.status,
+    reportedBy: validated.reportedBy?.trim() || undefined,
     quotePrice: validated.quotePrice ?? null,
     followUpDate: validated.followUpDate || null,
     followUpTime: validated.followUpTime || null,
@@ -271,9 +319,9 @@ export async function createReport(data: ReportFormData) {
     locationAddress: validated.locationAddress || null,
   });
 
-  revalidatePath("/");
-  revalidatePath("/reports");
-  revalidatePath("/calendar");
+  revalidatePath("/", "layout");
+  revalidatePath("/reports", "layout");
+  revalidatePath("/calendar", "layout");
   updateTag("reports");
   return { success: true, report: serializeReport(newReport) };
 }
@@ -289,15 +337,25 @@ export async function updateReport(id: string, data: Partial<ReportFormData>) {
   // Validate partial input with Zod
   const validated = reportInputSchema.partial().parse(data);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: any = { ...validated };
+  if (data.reportedBy !== undefined) {
+    updateData.reportedBy = data.reportedBy ? data.reportedBy.trim() : null;
+  }
+
   const updatedReport = await Report.findByIdAndUpdate(
     id,
-    { $set: validated },
-    { new: true }
+    { $set: updateData },
+    { new: true, runValidators: true }
   ).lean();
 
-  revalidatePath("/");
-  revalidatePath("/reports");
-  revalidatePath("/calendar");
+  if (!updatedReport) {
+    throw new Error("Report not found");
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/reports", "layout");
+  revalidatePath("/calendar", "layout");
   revalidatePath(`/reports/${id}`);
   updateTag("reports");
   return { success: true, report: serializeReport(updatedReport) };

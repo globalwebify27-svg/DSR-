@@ -8,7 +8,8 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
-  Navigation
+  Navigation,
+  UserCheck
 } from "lucide-react";
 import { ReportFormData } from "@/lib/actions";
 import { useReportForm } from "@/hooks/useReportForm";
@@ -26,6 +27,10 @@ const OUTLET_TYPES = [
   "Distributor",
   "Supermarket",
   "Pharmacy",
+  "Hospital",
+  "School",
+  "Clinic",
+  "Clinics",
   "Other",
 ];
 
@@ -117,15 +122,23 @@ export function ReportForm({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#171923] mb-1">
-              Mobile Number <span className="text-[#FF5722]">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-[#171923]">
+                Mobile Number <span className="text-[#FF5722]">*</span>
+              </label>
+              <span className={`text-[10px] ${formData.mobileNumber.length === 10 ? "text-emerald-600 font-semibold" : "text-[#737784]"}`}>
+                {formData.mobileNumber.length}/10 digits
+              </span>
+            </div>
             <input
               type="tel"
               name="mobileNumber"
               value={formData.mobileNumber}
               onChange={handleChange}
-              placeholder="e.g. +91 98765 43210"
+              placeholder="e.g. 9876543210"
+              maxLength={10}
+              inputMode="numeric"
+              pattern="[0-9]{10}"
               className={inputClass}
               required
             />
@@ -148,6 +161,27 @@ export function ReportForm({
               ))}
             </select>
           </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-[#171923] mb-1">
+              Report Added By / Sales Executive <span className="text-[#FF5722]">*</span>
+            </label>
+            <div className="relative">
+              <UserCheck className="w-4 h-4 text-[#737784] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                name="reportedBy"
+                value={formData.reportedBy || ""}
+                onChange={handleChange}
+                placeholder="e.g. Sales Executive Name"
+                className={`${inputClass} pl-9`}
+                required
+              />
+            </div>
+            <p className="text-[10px] text-[#737784] mt-1">
+              Identity of the field executive or team member recording this visit report
+            </p>
+          </div>
         </div>
       </div>
 
@@ -158,17 +192,26 @@ export function ReportForm({
             2
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#171923]">Media & Location</h3>
-            <p className="text-[11px] text-[#737784]">Storefront photo and GPS verification</p>
+            <h3 className="text-sm font-semibold text-[#171923]">
+              Media & Location <span className="text-[#FF5722]">*</span>
+            </h3>
+            <p className="text-[11px] text-[#737784]">Storefront photo and GPS verification (mandatory)</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           {/* Image Upload */}
           <div className="flex flex-col">
-            <label className="block text-xs font-medium text-[#171923] mb-1">
-              Outlet Image Upload
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-[#171923]">
+                Outlet Image Upload <span className="text-[#FF5722]">*</span>
+              </label>
+              {formData.outletImage && (
+                <span className="text-[10px] text-emerald-600 font-semibold inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Photo Uploaded
+                </span>
+              )}
+            </div>
             {imageUploading ? (
               <div className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border border-[#E5E7EB] rounded-md bg-[#F8F9FA] p-4 text-center">
                 <div className="w-6 h-6 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
@@ -198,13 +241,13 @@ export function ReportForm({
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border-2 border-dashed border-[#E5E7EB] rounded-md hover:border-[#FF5722]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
-                <Upload className="w-6 h-6 text-[#737784] mb-1.5" />
-                <span className="text-xs font-medium text-[#171923]">
-                  Tap to capture or upload photo
+              <label className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border-2 border-dashed border-[#E5E7EB] hover:border-[#FF5722] rounded-md bg-[#F8F9FA]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
+                <Upload className="w-6 h-6 text-[#FF5722] mb-1.5" />
+                <span className="text-xs font-semibold text-[#171923]">
+                  Tap to capture or upload storefront photo *
                 </span>
                 <span className="text-[11px] text-[#737784] mt-0.5">
-                  Uploads directly to Cloudinary (Max 10MB)
+                  Uploads directly to Cloudinary (Required)
                 </span>
                 <input
                   type="file"
@@ -221,7 +264,7 @@ export function ReportForm({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-medium text-[#171923]">
-                  GPS Location & Map Pin
+                  GPS Location & Map Pin <span className="text-[#FF5722]">*</span>
                 </label>
                 {formData.latitude && formData.longitude && (
                   <span className="text-[10px] text-[#737784] font-mono">
@@ -274,7 +317,7 @@ export function ReportForm({
 
             <div>
               <label className="block text-xs font-medium text-[#171923] mb-1">
-                Location / Place Name
+                Location / Place Name <span className="text-[#FF5722]">*</span>
               </label>
               <input
                 type="text"
@@ -283,6 +326,7 @@ export function ReportForm({
                 onChange={handleChange}
                 placeholder="e.g. Kadru, Ranchi, Jharkhand"
                 className={inputClass}
+                required
               />
             </div>
           </div>

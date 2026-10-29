@@ -12,6 +12,10 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowUpRight,
+  UserCheck,
+  RotateCcw,
+  Search,
+  X,
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { StatCard } from "./StatCard";
@@ -33,6 +37,12 @@ export function DashboardView({ stats }: DashboardViewProps) {
     setUpcomingTab,
     selectedReport,
     setSelectedReport,
+    selectedExecutive,
+    setSelectedExecutive,
+    searchTerm,
+    setSearchTerm,
+    executives,
+    rawListCount,
     currentList,
     allReports,
     interestedReports,
@@ -156,73 +166,172 @@ export function DashboardView({ stats }: DashboardViewProps) {
             <span className="bg-orange-50 text-[#FF5722] border border-orange-100 text-xs font-semibold px-2 py-0.5 rounded-full">
               {currentList.length}
             </span>
+            {(selectedExecutive !== "All" || searchTerm.trim()) && (
+              <span className="text-[11px] text-[#737784] font-medium hidden sm:inline">
+                (filtered from {rawListCount})
+              </span>
+            )}
           </div>
 
-          {selectedCard === "upcoming" ? (
-            <div className="flex items-center gap-1 bg-[#F3F4F6] p-1 rounded-lg border border-[#E5E7EB] w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => setUpcomingTab("all")}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
-                  upcomingTab === "all"
-                    ? "bg-white text-[#FF5722] shadow-xs"
-                    : "text-[#737784] hover:text-[#171923]"
-                }`}
-              >
-                All Upcoming ({allPendingFollowUps.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setUpcomingTab("today")}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
-                  upcomingTab === "today"
-                    ? "bg-white text-[#FF5722] shadow-xs"
-                    : "text-[#737784] hover:text-[#171923]"
-                }`}
-              >
-                Today ({todayFollowUps.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setUpcomingTab("upcoming")}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
-                  upcomingTab === "upcoming"
-                    ? "bg-white text-[#FF5722] shadow-xs"
-                    : "text-[#737784] hover:text-[#171923]"
-                }`}
-              >
-                Upcoming ({upcomingFollowUps.length})
-              </button>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            {selectedCard === "upcoming" && (
+              <div className="flex items-center gap-1 bg-[#F3F4F6] p-1 rounded-lg border border-[#E5E7EB] w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setUpcomingTab("all")}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                    upcomingTab === "all"
+                      ? "bg-white text-[#FF5722] shadow-xs"
+                      : "text-[#737784] hover:text-[#171923]"
+                  }`}
+                >
+                  All ({allPendingFollowUps.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpcomingTab("today")}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                    upcomingTab === "today"
+                      ? "bg-white text-[#FF5722] shadow-xs"
+                      : "text-[#737784] hover:text-[#171923]"
+                  }`}
+                >
+                  Today ({todayFollowUps.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpcomingTab("upcoming")}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                    upcomingTab === "upcoming"
+                      ? "bg-white text-[#FF5722] shadow-xs"
+                      : "text-[#737784] hover:text-[#171923]"
+                  }`}
+                >
+                  Upcoming ({upcomingFollowUps.length})
+                </button>
+              </div>
+            )}
+
+            {/* Search Input Bar */}
+            <div className="relative flex items-center grow sm:grow-0 w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 text-[#737784] absolute left-2.5 pointer-events-none" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search firm, owner, mobile..."
+                className="w-full bg-[#F8F9FA] hover:bg-white focus:bg-white border border-[#E5E7EB] hover:border-[#D1D5DB] rounded-md pl-8 pr-7 py-1.5 text-xs text-[#171923] placeholder-[#737784] font-medium focus:outline-hidden focus:border-[#FF5722] transition-colors shadow-2xs"
+                aria-label="Search reports"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 text-[#737784] hover:text-[#171923] p-0.5 rounded cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="text-xs text-[#737784] font-medium hidden sm:block">
-              {selectedCard === "total"
-                ? "Showing all recorded outlet visits"
-                : "Showing outlets marked as Interested"}
+
+            {/* Sales Executive Filter Dropdown */}
+            <div className="relative flex items-center grow sm:grow-0 w-full sm:w-auto">
+              <UserCheck className="w-3.5 h-3.5 text-[#FF5722] absolute left-2.5 pointer-events-none" />
+              <select
+                value={selectedExecutive}
+                onChange={(e) => setSelectedExecutive(e.target.value)}
+                className="w-full sm:w-auto bg-[#F8F9FA] hover:bg-white focus:bg-white border border-[#E5E7EB] hover:border-[#D1D5DB] rounded-md pl-8 pr-7 py-1.5 text-xs text-[#171923] font-medium focus:outline-hidden focus:border-[#FF5722] transition-colors cursor-pointer shadow-2xs"
+                aria-label="Filter by Sales Executive"
+              >
+                <option value="All">All Executives</option>
+                {executives.map((exec) => (
+                  <option key={exec} value={exec}>
+                    Executive: {exec}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Content */}
         {currentList.length === 0 ? (
           <div className="py-14 px-4 text-center text-xs text-[#737784]">
-            {selectedCard === "total"
-              ? "No reports recorded yet."
-              : selectedCard === "interested"
-              ? "No interested outlets found yet."
-              : upcomingTab === "all"
-              ? "No upcoming follow-ups scheduled."
-              : upcomingTab === "today"
-              ? "No follow-ups scheduled for today."
-              : "No upcoming follow-ups scheduled."}
-            <div className="mt-2.5">
-              <Link
-                href="/reports/new"
-                className="text-[#FF5722] hover:underline font-semibold inline-flex items-center gap-1"
-              >
-                Create a new report <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            {searchTerm.trim() ? (
+              <div className="space-y-2">
+                <p className="font-semibold text-[#171923] text-sm">
+                  No results found for &quot;{searchTerm}&quot;
+                </p>
+                <p className="text-xs text-[#737784]">
+                  {selectedExecutive !== "All"
+                    ? `No matching records found for executive "${selectedExecutive}". Try searching with different keywords or clear the filter.`
+                    : "Try adjusting your search terms to find what you're looking for."}
+                </p>
+                <div className="pt-2 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#FF5722] bg-orange-50 border border-orange-200 hover:bg-orange-100 rounded-md transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Clear Search
+                  </button>
+                  {selectedExecutive !== "All" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedExecutive("All");
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#737784] bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Reset All Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : selectedExecutive !== "All" ? (
+              <div className="space-y-2">
+                <p className="font-semibold text-[#171923] text-sm">
+                  No reports found for executive &quot;{selectedExecutive}&quot;
+                </p>
+                <p className="text-xs text-[#737784]">
+                  There are no records in this view attributed to {selectedExecutive}.
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedExecutive("All")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#FF5722] bg-orange-50 border border-orange-200 hover:bg-orange-100 rounded-md transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Show All Executives
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {selectedCard === "total"
+                  ? "No reports recorded yet."
+                  : selectedCard === "interested"
+                  ? "No interested outlets found yet."
+                  : upcomingTab === "all"
+                  ? "No upcoming follow-ups scheduled."
+                  : upcomingTab === "today"
+                  ? "No follow-ups scheduled for today."
+                  : "No upcoming follow-ups scheduled."}
+                <div className="mt-2.5">
+                  <Link
+                    href="/reports/new"
+                    className="text-[#FF5722] hover:underline font-semibold inline-flex items-center gap-1"
+                  >
+                    Create a new report <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -241,6 +350,11 @@ export function DashboardView({ stats }: DashboardViewProps) {
                           {item.outletType}
                         </span>
                       </p>
+                      {item.reportedBy && (
+                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                          By: <span className="text-[#4B5563] font-medium">{item.reportedBy}</span>
+                        </p>
+                      )}
                     </div>
                     <StatusBadge type="interest" value={item.interestLevel} />
                   </div>
@@ -325,6 +439,11 @@ export function DashboardView({ stats }: DashboardViewProps) {
                         <div className="text-[11px] text-[#737784]">
                           {item.ownerName}
                         </div>
+                        {item.reportedBy && (
+                          <div className="text-[10px] text-[#9CA3AF]">
+                            By: <span className="text-[#4B5563] font-medium">{item.reportedBy}</span>
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-5 whitespace-nowrap">
@@ -408,7 +527,11 @@ export function DashboardView({ stats }: DashboardViewProps) {
         {/* Footer Link to All Reports */}
         <div className="p-3 sm:px-6 sm:py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] flex items-center justify-between text-xs">
           <span className="text-[#737784]">
-            {selectedCard === "total"
+            {searchTerm.trim()
+              ? `Showing ${currentList.length} search ${currentList.length === 1 ? "result" : "results"} for "${searchTerm.trim()}"`
+              : selectedExecutive !== "All"
+              ? `Showing ${currentList.length} of ${rawListCount} records for ${selectedExecutive}`
+              : selectedCard === "total"
               ? `Showing ${allReports.length} total reports`
               : selectedCard === "interested"
               ? `Showing ${interestedReports.length} interested outlets`
