@@ -7,21 +7,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed.ts",
-    "postinstall": "prisma skills sync || exit 0"
+    "test": "tsx --test 'tests/**/*.test.ts'",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "cloudinary": "^2.11.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
     "lucide-react": "^1.62.0",
     "mongoose": "^9.11.4",
     "next": "16.4.3",
-    "prisma": "^6.19.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

@@ -1,9 +1,6 @@
 import React, { Suspense } from "react";
 import { getReports } from "@/lib/actions";
-import { AppLayout } from "@/components/AppLayout";
 import { ReportsView } from "@/components/ReportsView";
-
-export const dynamic = "force-dynamic";
 
 interface ReportsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -31,17 +28,16 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   });
 
   return (
-    <AppLayout>
-      <Suspense fallback={<div className="p-8 text-xs text-[#737784]">Loading reports...</div>}>
-        <ReportsView
-          key={`${status}-${interest}-${search}-${page}-${date}`}
-          initialReports={initialData.reports}
-          initialTotal={initialData.total}
-          initialPage={initialData.page}
-          initialLimit={initialData.limit}
-          initialTotalPages={initialData.totalPages}
-        />
-      </Suspense>
-    </AppLayout>
+    <Suspense fallback={<div className="p-8 text-xs text-[#737784]">Loading reports...</div>}>
+      <ReportsView
+        key={`${status}-${interest}-${search}-${page}-${date}`}
+        initialReports={initialData.reports}
+        initialTotal={initialData.total}
+        initialPage={initialData.page}
+        initialLimit={initialData.limit}
+        initialTotalPages={initialData.totalPages}
+      />
+    </Suspense>
   );
 }
+

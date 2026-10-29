@@ -1,6 +1,5 @@
 "use client";
 
-import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { ReportForm } from "@/components/ReportForm";
 import { createReport, ReportFormData } from "@/lib/actions";
@@ -19,11 +18,10 @@ export default function NewReportPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <PageHeader title="New Report" />
-        <ReportForm onSubmit={handleCreate} />
-      </div>
-    </AppLayout>
+    <div className="space-y-6">
+      <PageHeader title="New Report" />
+      <ReportForm onSubmit={handleCreate} />
+    </div>
   );
 }
+

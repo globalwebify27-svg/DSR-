@@ -47,9 +47,15 @@ const ReportSchema = new Schema<IReportDocument>(
   }
 );
 
-ReportSchema.index({ interestLevel: 1 });
-ReportSchema.index({ status: 1 });
-ReportSchema.index({ followUpDate: 1 });
+ReportSchema.index({ interestLevel: 1, createdAt: -1 });
+ReportSchema.index({ status: 1, followUpDate: 1 });
+ReportSchema.index({ followUpDate: 1, followUpTime: 1 });
+ReportSchema.index({ createdAt: -1 });
+ReportSchema.index({
+  firmName: "text",
+  ownerName: "text",
+  mobileNumber: "text",
+});
 
 export const Report: Model<IReportDocument> =
   mongoose.models.Report || mongoose.model<IReportDocument>("Report", ReportSchema);

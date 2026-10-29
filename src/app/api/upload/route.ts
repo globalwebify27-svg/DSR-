@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import { COOKIE_NAME, verifySessionToken } from "@/lib/auth-util";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = new Set([
@@ -17,6 +18,21 @@ export async function POST(req: NextRequest) {
     const isAuthenticated = await verifySessionToken(token);
     if (!isAuthenticated) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
+
+    // 2. Rate limit uploads: max 10 per minute per IP / token
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "client";
+    const uploadRateCheck = checkRateLimit(`upload:${clientIp}`, 10, 60 * 1000);
+    if (!uploadRateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many upload requests. Please wait ${uploadRateCheck.retryAfterSec} seconds.`,
+        },
+        { status: 429 }
+      );
     }
 
     // 2. Validate Cloudinary configuration

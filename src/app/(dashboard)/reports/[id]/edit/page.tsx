@@ -1,10 +1,7 @@
 import { notFound } from "next/navigation";
 import { getReportById } from "@/lib/actions";
-import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EditReportClient } from "./EditReportClient";
-
-export const dynamic = "force-dynamic";
 
 interface EditReportPageProps {
   params: Promise<{ id: string }>;
@@ -19,11 +16,10 @@ export default async function EditReportPage({ params }: EditReportPageProps) {
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <PageHeader title={`Edit: ${report.firmName}`} />
-        <EditReportClient report={report} />
-      </div>
-    </AppLayout>
+    <div className="space-y-6">
+      <PageHeader title={`Edit: ${report.firmName}`} />
+      <EditReportClient report={report} />
+    </div>
   );
 }
+

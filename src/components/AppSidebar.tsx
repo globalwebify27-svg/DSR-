@@ -82,6 +82,7 @@ function SidebarNavContent({ onMobileClose }: { onMobileClose?: () => void }) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                   item.active
@@ -112,6 +113,7 @@ function SidebarNavContent({ onMobileClose }: { onMobileClose?: () => void }) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
                 onClick={onMobileClose}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                   item.active

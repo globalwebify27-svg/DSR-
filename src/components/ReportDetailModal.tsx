@@ -115,13 +115,28 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
           {(report.latitude || report.locationAddress) && (
             <div className="p-3 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md flex items-start gap-2.5">
               <MapPin className="w-4 h-4 text-[#FF5722] shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="text-[11px] text-[#737784] font-medium block">
-                  Location Name:
+                  Location:
                 </span>
                 <div className="font-semibold text-[#171923] text-xs mt-0.5">
                   {report.locationAddress || "Captured Location"}
                 </div>
+                {report.latitude && report.longitude && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-[10px] text-[#737784] font-mono bg-white px-1.5 py-0.5 rounded border border-[#E5E7EB]">
+                      {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
+                    </span>
+                    <a
+                      href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-[#FF5722] hover:underline font-medium inline-flex items-center gap-0.5"
+                    >
+                      Open in Maps ↗
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}

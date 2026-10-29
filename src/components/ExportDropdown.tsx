@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Download, ChevronDown, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, ChevronDown, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { ReportItem } from "./DataTable";
-import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 
 interface ExportDropdownProps {
   reports: ReportItem[];
@@ -17,6 +16,7 @@ export function ExportDropdown({
   filenamePrefix = "dsr-reports",
 }: ExportDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState<"excel" | "pdf" | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close when clicked outside
@@ -38,29 +38,46 @@ export function ExportDropdown({
     };
   }, [isOpen]);
 
-  const handleExportExcel = () => {
-    setIsOpen(false);
-    const dateStr = new Date().toISOString().split("T")[0];
-    exportToExcel(reports, `${filenamePrefix}-${dateStr}.xlsx`);
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting("excel");
+      setIsOpen(false);
+      const { exportToExcel } = await import("@/lib/exportUtils");
+      const dateStr = new Date().toISOString().split("T")[0];
+      exportToExcel(reports, `${filenamePrefix}-${dateStr}.xlsx`);
+    } finally {
+      setIsExporting(null);
+    }
   };
 
-  const handleExportPDF = () => {
-    setIsOpen(false);
-    const dateStr = new Date().toISOString().split("T")[0];
-    exportToPDF(reports, title, `${filenamePrefix}-${dateStr}.pdf`);
+  const handleExportPDF = async () => {
+    try {
+      setIsExporting("pdf");
+      setIsOpen(false);
+      const { exportToPDF } = await import("@/lib/exportUtils");
+      const dateStr = new Date().toISOString().split("T")[0];
+      exportToPDF(reports, title, `${filenamePrefix}-${dateStr}.pdf`);
+    } finally {
+      setIsExporting(null);
+    }
   };
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         type="button"
+        disabled={isExporting !== null}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] hover:border-gray-300 rounded-md transition-colors shadow-2xs cursor-pointer select-none active:scale-[0.98]"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] hover:border-gray-300 rounded-md transition-colors shadow-2xs cursor-pointer select-none active:scale-[0.98] disabled:opacity-50"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        <Download className="w-3.5 h-3.5 text-[#FF5722]" />
-        <span>Export</span>
+        {isExporting ? (
+          <Loader2 className="w-3.5 h-3.5 text-[#FF5722] animate-spin" />
+        ) : (
+          <Download className="w-3.5 h-3.5 text-[#FF5722]" />
+        )}
+        <span>{isExporting ? "Exporting..." : "Export"}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-[#737784] transition-transform duration-150 ${
             isOpen ? "rotate-180" : ""

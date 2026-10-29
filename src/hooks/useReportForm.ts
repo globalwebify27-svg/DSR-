@@ -112,6 +112,47 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     );
   };
 
+  const handlePinLocation = async (lat: number, lon: number) => {
+    const roundedLat = parseFloat(lat.toFixed(6));
+    const roundedLon = parseFloat(lon.toFixed(6));
+
+    setFormData((prev) => ({
+      ...prev,
+      latitude: roundedLat,
+      longitude: roundedLon,
+    }));
+    setGpsSuccess(true);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${roundedLat}&lon=${roundedLon}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.display_name) {
+          const addr = data.address || {};
+          const parts = [
+            addr.suburb || addr.neighbourhood || addr.road,
+            addr.city || addr.town || addr.county || addr.state_district,
+            addr.state,
+          ].filter(Boolean);
+          const detectedPlaceName = parts.length > 0 ? parts.join(", ") : data.display_name;
+          setFormData((prev) => ({
+            ...prev,
+            locationAddress: detectedPlaceName,
+          }));
+        }
+      }
+    } catch {
+      // Keep existing address or silent fail for geocoding
+    }
+  };
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -196,6 +237,7 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     gpsSuccess,
     handleChange,
     handleCaptureLocation,
+    handlePinLocation,
     handleImageChange,
     handleRemoveImage,
     handleSubmit,

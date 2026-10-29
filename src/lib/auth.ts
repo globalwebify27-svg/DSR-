@@ -1,8 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE_NAME, signData, timingSafeCompare } from "./auth-util";
+import { checkRateLimit } from "./rate-limit";
 
 export async function loginAction(formData: FormData) {
   const username = formData.get("username");
@@ -10,6 +11,22 @@ export async function loginAction(formData: FormData) {
 
   if (typeof username !== "string" || typeof password !== "string") {
     return { success: false, error: "Please enter both Login ID and Password." };
+  }
+
+  // Rate limit: 5 attempts per 60 seconds per IP / username
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "unknown-ip";
+  const rateLimitKey = `login:${clientIp}:${username.trim().toLowerCase()}`;
+  const rateCheck = checkRateLimit(rateLimitKey, 5, 60 * 1000);
+
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: `Too many login attempts. Please wait ${rateCheck.retryAfterSec} seconds before trying again.`,
+    };
   }
 
   const validUsername = process.env.AUTH_USERNAME;

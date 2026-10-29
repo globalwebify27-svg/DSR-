@@ -29,15 +29,25 @@ export function timingSafeCompare(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
+let cachedHmacKeyPromise: Promise<CryptoKey> | null = null;
+
+function getHmacKey(): Promise<CryptoKey> {
+  if (!cachedHmacKeyPromise) {
+    const enc = new TextEncoder();
+    cachedHmacKeyPromise = crypto.subtle.importKey(
+      "raw",
+      enc.encode(getSecret()),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+  }
+  return cachedHmacKeyPromise;
+}
+
 export async function signData(data: string): Promise<string> {
   const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(getSecret()),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  const key = await getHmacKey();
   const signature = await crypto.subtle.sign("HMAC", key, enc.encode(data));
   const hex = Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -45,8 +55,17 @@ export async function signData(data: string): Promise<string> {
   return `${data}.${hex}`;
 }
 
+const verifiedTokenCache = new Map<string, number>();
+
 export async function verifySessionToken(token?: string | null): Promise<boolean> {
   if (!token || typeof token !== "string") return false;
+
+  const now = Date.now();
+  const cachedValidUntil = verifiedTokenCache.get(token);
+  if (cachedValidUntil && cachedValidUntil > now) {
+    return true;
+  }
+
   const parts = token.split(".");
   if (parts.length !== 2) return false;
 
@@ -64,9 +83,15 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
 
   const timestampStr = data.substring(lastColonIndex + 1);
   const created = Number(timestampStr);
-  if (!created || Date.now() - created > 7 * 24 * 60 * 60 * 1000) {
+  if (!created || now - created > 7 * 24 * 60 * 60 * 1000) {
     return false;
   }
+
+  // Cache verified token for 60 seconds to make tab navigation instant
+  if (verifiedTokenCache.size > 1000) {
+    verifiedTokenCache.clear();
+  }
+  verifiedTokenCache.set(token, now + 60 * 1000);
 
   return true;
 }

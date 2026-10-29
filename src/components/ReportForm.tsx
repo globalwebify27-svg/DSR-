@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ReportFormData } from "@/lib/actions";
 import { useReportForm } from "@/hooks/useReportForm";
+import { LocationPickerMap } from "./LocationPickerMap";
 
 interface ReportFormProps {
   initialData?: Partial<ReportFormData> & { id?: string };
@@ -52,6 +53,7 @@ export function ReportForm({
     gpsSuccess,
     handleChange,
     handleCaptureLocation,
+    handlePinLocation,
     handleImageChange,
     handleRemoveImage,
     handleSubmit,
@@ -149,11 +151,149 @@ export function ReportForm({
         </div>
       </div>
 
-      {/* Section 2: Visit & Follow-up */}
+      {/* Section 2: Media & Location */}
       <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
         <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
           <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
             2
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-[#171923]">Media & Location</h3>
+            <p className="text-[11px] text-[#737784]">Storefront photo and GPS verification</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {/* Image Upload */}
+          <div className="flex flex-col">
+            <label className="block text-xs font-medium text-[#171923] mb-1">
+              Outlet Image Upload
+            </label>
+            {imageUploading ? (
+              <div className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border border-[#E5E7EB] rounded-md bg-[#F8F9FA] p-4 text-center">
+                <div className="w-6 h-6 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs font-medium text-[#171923]">
+                  Uploading to Cloudinary...
+                </span>
+                <span className="text-[11px] text-[#737784] mt-0.5">
+                  Optimizing and securing image CDN link
+                </span>
+              </div>
+            ) : formData.outletImage ? (
+              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 h-44 sm:h-full sm:min-h-[260px] w-full">
+                <Image
+                  src={formData.outletImage}
+                  alt="Outlet preview"
+                  fill
+                  className="object-contain p-2"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1.5 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
+                  title="Remove image"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border-2 border-dashed border-[#E5E7EB] rounded-md hover:border-[#FF5722]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
+                <Upload className="w-6 h-6 text-[#737784] mb-1.5" />
+                <span className="text-xs font-medium text-[#171923]">
+                  Tap to capture or upload photo
+                </span>
+                <span className="text-[11px] text-[#737784] mt-0.5">
+                  Uploads directly to Cloudinary (Max 10MB)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* GPS Location Capture & Interactive Pinpoint Map */}
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-[#171923]">
+                  GPS Location & Map Pin
+                </label>
+                {formData.latitude && formData.longitude && (
+                  <span className="text-[10px] text-[#737784] font-mono">
+                    {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCaptureLocation}
+                  disabled={gpsLoading}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-medium bg-[#F8F9FA] hover:bg-[#F3F4F6] text-[#171923] border border-[#E5E7EB] rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Navigation className={`w-3.5 h-3.5 text-[#FF5722] ${gpsLoading ? "animate-spin" : ""}`} />
+                  {gpsLoading ? "Acquiring Coordinates..." : "Capture GPS Coordinates"}
+                </button>
+                {gpsSuccess && (
+                  <span className="inline-flex items-center text-xs text-emerald-600 font-medium gap-1 self-start sm:self-center">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Coordinates Set
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Interactive Small Map */}
+            <div>
+              <LocationPickerMap
+                latitude={formData.latitude}
+                longitude={formData.longitude}
+                onLocationSelect={handlePinLocation}
+              />
+            </div>
+
+            {formData.latitude && formData.longitude && (
+              <div className="p-2.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-xs">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-[#FF5722] shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] text-[#737784] font-medium block uppercase tracking-wider">
+                      Detected Place:
+                    </span>
+                    <span className="font-semibold text-[#171923] text-xs leading-snug block mt-0.5 truncate">
+                      {formData.locationAddress || "Pinned Location"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-[#171923] mb-1">
+                Location / Place Name
+              </label>
+              <input
+                type="text"
+                name="locationAddress"
+                value={formData.locationAddress || ""}
+                onChange={handleChange}
+                placeholder="e.g. Kadru, Ranchi, Jharkhand"
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 3: Visit & Follow-up */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
+        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
+          <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
+            3
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[#171923]">Visit & Follow-up</h3>
@@ -283,128 +423,6 @@ export function ReportForm({
               placeholder="e.g. High footfall outlet, interested in counter unit..."
               className={`${inputClass} resize-none`}
             />
-          </div>
-        </div>
-      </div>
-
-      {/* Section 3: Media & Location */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 sm:p-5 shadow-2xs">
-        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[#E5E7EB]">
-          <div className="w-6 h-6 rounded bg-[#FFF3E0] text-[#FF5722] flex items-center justify-center font-bold text-xs">
-            3
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#171923]">Media & Location</h3>
-            <p className="text-[11px] text-[#737784]">Storefront photo and GPS verification</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {/* Image Upload */}
-          <div>
-            <label className="block text-xs font-medium text-[#171923] mb-1">
-              Outlet Image Upload
-            </label>
-            {imageUploading ? (
-              <div className="flex flex-col items-center justify-center h-36 border border-[#E5E7EB] rounded-md bg-[#F8F9FA] p-4 text-center">
-                <div className="w-6 h-6 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
-                <span className="text-xs font-medium text-[#171923]">
-                  Uploading to Cloudinary...
-                </span>
-                <span className="text-[11px] text-[#737784] mt-0.5">
-                  Optimizing and securing image CDN link
-                </span>
-              </div>
-            ) : formData.outletImage ? (
-              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 h-36 w-full">
-                <Image
-                  src={formData.outletImage}
-                  alt="Outlet preview"
-                  fill
-                  className="object-contain p-2"
-                  unoptimized
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1.5 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
-                  title="Remove image"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-[#E5E7EB] rounded-md hover:border-[#FF5722]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
-                <Upload className="w-6 h-6 text-[#737784] mb-1.5" />
-                <span className="text-xs font-medium text-[#171923]">
-                  Tap to capture or upload photo
-                </span>
-                <span className="text-[11px] text-[#737784] mt-0.5">
-                  Uploads directly to Cloudinary (Max 10MB)
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-
-          {/* GPS Location Capture */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-[#171923] mb-1">
-                GPS Location Capture
-              </label>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleCaptureLocation}
-                  disabled={gpsLoading}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 text-xs font-medium bg-[#F8F9FA] hover:bg-[#F3F4F6] text-[#171923] border border-[#E5E7EB] rounded-md transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Navigation className={`w-3.5 h-3.5 text-[#FF5722] ${gpsLoading ? "animate-spin" : ""}`} />
-                  {gpsLoading ? "Acquiring Coordinates..." : "Capture GPS Coordinates"}
-                </button>
-                {gpsSuccess && (
-                  <span className="inline-flex items-center text-xs text-emerald-600 font-medium gap-1 self-start sm:self-center">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Captured
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {formData.latitude && formData.longitude && (
-              <div className="p-3 bg-[#F8F9FA] border border-[#E5E7EB] rounded-md text-xs">
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-[#FF5722] shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <span className="text-[11px] text-[#737784] font-medium block">
-                      Location Name:
-                    </span>
-                    <span className="font-semibold text-[#171923] text-xs leading-snug block mt-0.5">
-                      {formData.locationAddress || "Locating place name..."}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-[#171923] mb-1">
-                Location / Place Name
-              </label>
-              <input
-                type="text"
-                name="locationAddress"
-                value={formData.locationAddress || ""}
-                onChange={handleChange}
-                placeholder="e.g. Kadru, Ranchi, Jharkhand"
-                className={inputClass}
-              />
-            </div>
           </div>
         </div>
       </div>

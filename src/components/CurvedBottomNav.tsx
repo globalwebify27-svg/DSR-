@@ -116,6 +116,7 @@ function NavContent() {
           {/* Elevated Floating Action Button Docked in Cradle */}
           <Link
             href={TABS[selectedIndex].href}
+            prefetch={true}
             aria-label={TABS[selectedIndex].label}
             title={TABS[selectedIndex].label}
             className="absolute -top-4 w-[40px] h-[40px] rounded-full bg-gradient-to-tr from-[#FF5722] to-[#FF7043] flex items-center justify-center text-white shadow-[0_6px_16px_rgba(255,87,34,0.38)] ring-[3px] ring-white pointer-events-auto active:scale-90 transition-transform focus:outline-none"
@@ -134,6 +135,7 @@ function NavContent() {
               <Link
                 key={tab.id}
                 href={tab.href}
+                prefetch={true}
                 onClick={() => setOptimisticIndex(idx)}
                 className="relative flex flex-col items-center justify-end h-full pb-2 px-0.5 focus:outline-none active:scale-95 transition-transform"
               >
