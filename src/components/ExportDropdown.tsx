@@ -69,7 +69,7 @@ export function ExportDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-48 bg-white border border-[#E5E7EB] rounded-lg shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1.5 w-52 max-w-[calc(100vw-2rem)] bg-white border border-[#E5E7EB] rounded-lg shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
           <div className="px-3 py-1.5 border-b border-gray-100 text-[10px] font-bold text-[#737784] uppercase tracking-wider">
             Export Format
           </div>

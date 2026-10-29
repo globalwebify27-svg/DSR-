@@ -102,10 +102,11 @@ export function DashboardView({ stats }: DashboardViewProps) {
         </div>
       )}
 
-      {/* 3 Interactive Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      {/* 3 Interactive Stat Cards (Compact 3-column row on mobile, spacious grid on desktop) */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <StatCard
           title="Total Reports"
+          mobileTitle="Total"
           value={stats.totalReports}
           icon={FileText}
           isActive={selectedCard === "total"}
@@ -113,6 +114,7 @@ export function DashboardView({ stats }: DashboardViewProps) {
         />
         <StatCard
           title="Interested Outlets"
+          mobileTitle="Interest"
           value={stats.interestedOutlets}
           icon={Heart}
           highlight
@@ -121,6 +123,7 @@ export function DashboardView({ stats }: DashboardViewProps) {
         />
         <StatCard
           title="Upcoming Follow-ups"
+          mobileTitle="Pending"
           value={stats.pendingFollowUps}
           icon={Clock}
           isActive={selectedCard === "upcoming"}
@@ -242,17 +245,17 @@ export function DashboardView({ stats }: DashboardViewProps) {
                     <StatusBadge type="interest" value={item.interestLevel} />
                   </div>
 
-                  <div className="flex items-center justify-between text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
                     <a
                       href={`tel:${item.mobileNumber}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#171923] hover:text-[#FF5722] bg-[#F8F9FA] px-2.5 py-1 rounded border border-[#E5E7EB]"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#171923] hover:text-[#FF5722] bg-[#F8F9FA] px-2.5 py-1 rounded border border-[#E5E7EB] w-fit"
                     >
                       <Phone className="w-3 h-3 text-[#FF5722]" />
                       {item.mobileNumber}
                     </a>
                     {item.followUpDate ? (
-                      <div className="text-right text-[11px] flex items-center gap-1.5">
-                        {renderFollowUpBadge(item.followUpDate)}
+                      <div className="flex items-center flex-wrap gap-1.5 text-xs text-[#737784]">
+                        <Calendar className="w-3 h-3 text-[#FF5722] shrink-0" />
                         <span className="font-semibold text-[#171923]">
                           {formatDate(item.followUpDate)}
                         </span>
@@ -261,6 +264,7 @@ export function DashboardView({ stats }: DashboardViewProps) {
                             • {formatTime(item.followUpTime)}
                           </span>
                         )}
+                        {renderFollowUpBadge(item.followUpDate)}
                       </div>
                     ) : (
                       <span className="text-xs text-[#9CA3AF]">—</span>
