@@ -1,9 +1,19 @@
 import mongoose from "mongoose";
 import { Report } from "../src/models/Report";
-import * as dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
-dotenv.config();
+// Load environment variables using Node.js native env loader
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {
+    // .env.local not found, fallback to .env
+  }
+  try {
+    process.loadEnvFile(".env");
+  } catch {
+    // .env not found
+  }
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
 
