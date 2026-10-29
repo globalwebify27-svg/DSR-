@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  MoreVertical,
   Edit2,
   Trash2,
   Eye,
@@ -14,6 +13,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
+import { formatDate, formatTime } from "@/lib/formatters";
 
 export interface ReportItem {
   id: string;
@@ -64,11 +64,8 @@ export function DataTable({
 
   if (reports.length === 0) {
     return (
-      <div className="w-full py-16 text-center bg-white border border-[#E5E7EB] rounded-lg p-4">
-        <p className="text-sm font-medium text-[#171923]">No reports found</p>
-        <p className="text-xs text-[#737784] mt-1">
-          Try adjusting your search query or filter options.
-        </p>
+      <div className="w-full py-12 text-center bg-white border border-[#E5E7EB] rounded-lg p-4">
+        <p className="text-sm font-medium text-[#737784]">No reports found</p>
       </div>
     );
   }
@@ -109,13 +106,13 @@ export function DataTable({
 
               {report.followUpDate ? (
                 <div className="text-right">
-                  <span className="font-medium text-[#171923] flex items-center gap-1">
+                  <span className="font-semibold text-[#171923] flex items-center gap-1 justify-end">
                     <Calendar className="w-3 h-3 text-[#FF5722]" />
-                    {report.followUpDate}
+                    {formatDate(report.followUpDate)}
                   </span>
                   {report.followUpTime && (
-                    <span className="text-[11px] text-[#737784]">
-                      {report.followUpTime}
+                    <span className="text-[11px] text-[#737784] font-medium block">
+                      {formatTime(report.followUpTime)}
                     </span>
                   )}
                 </div>
@@ -301,15 +298,15 @@ export function DataTable({
                     {/* Follow-up / Date */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {report.followUpDate ? (
-                        <div className="flex flex-col">
-                          <span className="font-medium text-[#171923] flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-[#FF5722]" />
-                            {report.followUpDate}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-semibold text-[#171923] flex items-center gap-1.5 text-xs sm:text-sm">
+                            <Calendar className="w-3.5 h-3.5 text-[#FF5722] shrink-0" />
+                            {formatDate(report.followUpDate)}
                           </span>
                           {report.followUpTime && (
-                            <span className="text-[#737784] text-[11px] flex items-center gap-1 mt-0.5">
-                              <Clock className="w-2.5 h-2.5" />
-                              {report.followUpTime}
+                            <span className="text-[#737784] text-[11px] font-medium flex items-center gap-1 pl-5">
+                              <Clock className="w-3 h-3 text-[#9CA3AF] shrink-0" />
+                              {formatTime(report.followUpTime)}
                             </span>
                           )}
                         </div>

@@ -1,172 +1,111 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
+import Link from "next/link";
+import { Calendar } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { SearchInput } from "./SearchInput";
 import { FilterPanel } from "./FilterPanel";
-import { DataTable, ReportItem } from "./DataTable";
+import { DataTable } from "./DataTable";
 import { Pagination } from "./Pagination";
 import { ReportDetailModal } from "./ReportDetailModal";
-import { getReports, updateReportStatus, deleteReport } from "@/lib/actions";
+import { ExportDropdown } from "./ExportDropdown";
+import { useReports, UseReportsProps } from "@/hooks/useReports";
 
-interface ReportsViewProps {
-  initialReports: ReportItem[];
-  initialTotal: number;
-  initialPage: number;
-  initialLimit: number;
-  initialTotalPages: number;
-}
-
-export function ReportsView({
-  initialReports,
-  initialTotal,
-  initialPage,
-  initialLimit,
-  initialTotalPages,
-}: ReportsViewProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // Filters state initialized from URL search params if present
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [interest, setInterest] = useState(searchParams.get("interest") || "All");
-  const [status, setStatus] = useState(searchParams.get("status") || "All");
-  const [outletType, setOutletType] = useState(searchParams.get("outletType") || "All");
-  const [date, setDate] = useState(searchParams.get("date") || "");
-  const [page, setPage] = useState(initialPage);
-
-  const [reports, setReports] = useState<ReportItem[]>(initialReports);
-  const [total, setTotal] = useState(initialTotal);
-  const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [isPending, startTransition] = useTransition();
-  const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
-
-  // Sync state if URL query params change (e.g. from sidebar clicks like ?status=Pending)
-  useEffect(() => {
-    const urlStatus = searchParams.get("status") || "All";
-    const urlInterest = searchParams.get("interest") || "All";
-    const urlSearch = searchParams.get("search") || "";
-    setStatus(urlStatus);
-    setInterest(urlInterest);
-    setSearch(urlSearch);
-  }, [searchParams]);
-
-  // Fetch updated records on filter / search / page change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      startTransition(async () => {
-        const res = await getReports({
-          page,
-          limit: initialLimit,
-          search,
-          interest,
-          status,
-          outletType,
-          date,
-        });
-        setReports(res.reports);
-        setTotal(res.total);
-        setTotalPages(res.totalPages);
-      });
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [search, interest, status, outletType, date, page, initialLimit]);
-
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    await updateReportStatus(id, newStatus);
-    setReports((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-    );
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteReport(id);
-    setReports((prev) => prev.filter((r) => r.id !== id));
-    setTotal((prev) => Math.max(0, prev - 1));
-  };
-
-  const handleResetFilters = () => {
-    setSearch("");
-    setInterest("All");
-    setStatus("All");
-    setOutletType("All");
-    setDate("");
-    setPage(1);
-    router.replace("/reports");
-  };
+export function ReportsView(props: UseReportsProps) {
+  const {
+    reports,
+    total,
+    page,
+    totalPages,
+    isPending,
+    selectedReport,
+    setSelectedReport,
+    search,
+    interest,
+    status,
+    outletType,
+    date,
+    setPage,
+    handleSearchChange,
+    handleInterestChange,
+    handleStatusFilterChange,
+    handleOutletTypeChange,
+    handleDateChange,
+    handleStatusChange,
+    handleDelete,
+    handleResetFilters,
+  } = useReports(props);
 
   return (
     <div className="space-y-5">
       {/* Page Header */}
       <PageHeader
-        title="DSR Reports"
+        title="Reports"
         badge={total}
-        subtitle="Manage and track all customer outlets, visit status, and quotations"
         actionText="Add Report"
         actionHref="/reports/new"
-      />
+      >
+        <ExportDropdown
+          reports={reports}
+          title="Field Sales Reports"
+          filenamePrefix="dsr-reports"
+        />
+        <Link
+          href="/calendar"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#171923] bg-white hover:bg-[#F8F9FA] border border-[#E5E7EB] rounded-md transition-colors shadow-2xs"
+        >
+          <Calendar className="w-3.5 h-3.5 text-[#FF5722]" />
+          Schedule Calendar
+        </Link>
+      </PageHeader>
 
       {/* Search Bar & Quick Filters Area */}
       <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 space-y-4 shadow-2xs">
         <div className="max-w-md">
           <SearchInput
             value={search}
-            onChange={(val) => {
-              setSearch(val);
-              setPage(1);
-            }}
+            onChange={handleSearchChange}
           />
         </div>
 
-        {/* Filter Panel (Interest tabs, status, outlet type, date) */}
+        {/* Filter Panel */}
         <FilterPanel
           currentInterest={interest}
-          onInterestChange={(i) => {
-            setInterest(i);
-            setPage(1);
-          }}
+          onInterestChange={handleInterestChange}
           currentStatus={status}
-          onStatusChange={(s) => {
-            setStatus(s);
-            setPage(1);
-          }}
+          onStatusChange={handleStatusFilterChange}
           currentOutletType={outletType}
-          onOutletTypeChange={(t) => {
-            setOutletType(t);
-            setPage(1);
-          }}
+          onOutletTypeChange={handleOutletTypeChange}
           currentDate={date}
-          onDateChange={(d) => {
-            setDate(d);
-            setPage(1);
-          }}
+          onDateChange={handleDateChange}
           onReset={handleResetFilters}
         />
       </div>
 
-      {/* Reports Data Table */}
-      <div className="space-y-0">
+      {/* Data Table */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg shadow-2xs overflow-hidden">
         <DataTable
           reports={reports}
-          isLoading={isPending}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
-          onViewDetails={(item) => setSelectedReport(item)}
+          onViewDetails={(report) => setSelectedReport(report)}
+          isLoading={isPending}
         />
 
         {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={total}
-          itemsPerPage={initialLimit}
-          onPageChange={(p) => setPage(p)}
-        />
+        <div className="border-t border-[#E5E7EB] px-4 py-3 bg-[#F8F9FA]">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={props.initialLimit}
+            onPageChange={(p) => setPage(p)}
+          />
+        </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Details View Modal */}
       <ReportDetailModal
         report={selectedReport}
         onClose={() => setSelectedReport(null)}

@@ -21,10 +21,7 @@ export default async function EditReportPage({ params }: EditReportPageProps) {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <PageHeader
-          title={`Edit Report: ${report.firmName}`}
-          subtitle="Update outlet information, follow-up remarks, or visit status"
-        />
+        <PageHeader title={`Edit: ${report.firmName}`} />
         <EditReportClient report={report} />
       </div>
     </AppLayout>

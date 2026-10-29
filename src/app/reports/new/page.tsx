@@ -21,10 +21,7 @@ export default function NewReportPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <PageHeader
-          title="Add Daily Sales Report"
-          subtitle="Record new outlet visit details, customer interest, quotations, and GPS coordinates"
-        />
+        <PageHeader title="New Report" />
         <ReportForm onSubmit={handleCreate} />
       </div>
     </AppLayout>

@@ -2,20 +2,32 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { COOKIE_NAME, signData } from "./auth-util";
+import { COOKIE_NAME, signData, timingSafeCompare } from "./auth-util";
 
 export async function loginAction(formData: FormData) {
-  const username = formData.get("username") as string;
-  const password = formData.get("password") as string;
+  const username = formData.get("username");
+  const password = formData.get("password");
 
-  const validUsername = process.env.AUTH_USERNAME || "admin";
-  const validPassword = process.env.AUTH_PASSWORD || "admin123";
-
-  if (!username || !password) {
+  if (typeof username !== "string" || typeof password !== "string") {
     return { success: false, error: "Please enter both Login ID and Password." };
   }
 
-  if (username.trim() !== validUsername || password !== validPassword) {
+  const validUsername = process.env.AUTH_USERNAME;
+  const validPassword = process.env.AUTH_PASSWORD;
+
+  if (!validUsername || !validPassword) {
+    console.error("Fatal: AUTH_USERNAME or AUTH_PASSWORD is not set in environment.");
+    return {
+      success: false,
+      error: "Server configuration error: Authentication credentials not configured.",
+    };
+  }
+
+  // Timing-safe verification of credentials
+  const isUsernameMatch = timingSafeCompare(username.trim(), validUsername.trim());
+  const isPasswordMatch = timingSafeCompare(password, validPassword);
+
+  if (!isUsernameMatch || !isPasswordMatch) {
     return { success: false, error: "Invalid Login ID or Password." };
   }
 
@@ -38,4 +50,3 @@ export async function logoutAction() {
   cookieStore.delete(COOKIE_NAME);
   redirect("/login");
 }
-

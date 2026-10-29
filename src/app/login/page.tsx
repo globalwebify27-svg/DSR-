@@ -30,8 +30,10 @@ export default function LoginPage() {
       } else {
         setErrorMessage(res?.error || "Invalid Login ID or Password.");
       }
-    } catch (err: any) {
-      setErrorMessage(err?.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "An unexpected error occurred."
+      );
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,32 @@
 export const COOKIE_NAME = "dsr_auth_session";
 
 function getSecret(): string {
-  return process.env.AUTH_SECRET || "dsr_default_secure_secret_key_2026";
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Fatal: AUTH_SECRET must be configured in environment variables.");
+    }
+    return "dsr_local_development_secret_key_32bytes_min";
+  }
+  return secret;
+}
+
+// Constant-time string comparison to prevent timing attacks
+export function timingSafeCompare(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const bufA = enc.encode(a);
+  const bufB = enc.encode(b);
+
+  if (bufA.byteLength !== bufB.byteLength) {
+    return false;
+  }
+
+  let mismatch = 0;
+  for (let i = 0; i < bufA.byteLength; i++) {
+    mismatch |= bufA[i] ^ bufB[i];
+  }
+
+  return mismatch === 0;
 }
 
 export async function signData(data: string): Promise<string> {
@@ -21,21 +46,27 @@ export async function signData(data: string): Promise<string> {
 }
 
 export async function verifySessionToken(token?: string | null): Promise<boolean> {
-  if (!token) return false;
+  if (!token || typeof token !== "string") return false;
   const parts = token.split(".");
   if (parts.length !== 2) return false;
 
-  const [data, sig] = parts;
+  const [data] = parts;
   const expected = await signData(data);
-  if (expected !== token) return false;
+
+  // Constant-time comparison
+  if (!timingSafeCompare(expected, token)) {
+    return false;
+  }
 
   // Check expiration (7 days)
-  const [, timestamp] = data.split(":");
-  const created = Number(timestamp);
+  const lastColonIndex = data.lastIndexOf(":");
+  if (lastColonIndex === -1) return false;
+
+  const timestampStr = data.substring(lastColonIndex + 1);
+  const created = Number(timestampStr);
   if (!created || Date.now() - created > 7 * 24 * 60 * 60 * 1000) {
     return false;
   }
 
   return true;
 }
-

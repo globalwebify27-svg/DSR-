@@ -7,6 +7,7 @@ import { logoutAction } from "@/lib/auth";
 import {
   LayoutDashboard,
   FileText,
+  Calendar,
   PlusCircle,
   Clock,
   CheckCircle,
@@ -38,6 +39,12 @@ function SidebarNavContent({ onMobileClose }: { onMobileClose?: () => void }) {
       href: "/reports",
       icon: FileText,
       active: pathname === "/reports" && !currentStatus,
+    },
+    {
+      name: "Calendar",
+      href: "/calendar",
+      icon: Calendar,
+      active: pathname === "/calendar",
     },
     {
       name: "Add Report",

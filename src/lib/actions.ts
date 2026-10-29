@@ -1,9 +1,11 @@
 "use server";
 
 import mongoose from "mongoose";
+import { cookies } from "next/headers";
 import { connectDB } from "@/lib/mongodb";
 import { Report } from "@/models/Report";
 import { ReportItem } from "@/components/DataTable";
+import { COOKIE_NAME, verifySessionToken } from "@/lib/auth-util";
 import { revalidatePath } from "next/cache";
 
 export interface ReportFormData {
@@ -23,6 +25,16 @@ export interface ReportFormData {
   latitude?: number | null;
   longitude?: number | null;
   locationAddress?: string | null;
+}
+
+// Enforce authentication on all server-side operations
+async function requireAuth() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const isValid = await verifySessionToken(token);
+  if (!isValid) {
+    throw new Error("Unauthorized: Session is invalid or expired. Please sign in.");
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,53 +57,79 @@ function serializeReport(doc: any): ReportItem {
     latitude: doc.latitude ?? null,
     longitude: doc.longitude ?? null,
     locationAddress: doc.locationAddress ?? null,
-    createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : (doc.createdAt || new Date().toISOString()),
+    createdAt:
+      doc.createdAt instanceof Date
+        ? doc.createdAt.toISOString()
+        : doc.createdAt || new Date().toISOString(),
   };
 }
 
 export async function getDashboardStats() {
+  await requireAuth();
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
   try {
     await connectDB();
 
-    const [totalReports, interestedOutlets, pendingFollowUps, todayRaw, upcomingRaw] =
-      await Promise.all([
-        Report.countDocuments(),
-        Report.countDocuments({ interestLevel: "Interested" }),
-        Report.countDocuments({
-          status: { $ne: "Completed" },
-          followUpDate: { $ne: null, $exists: true },
-        }),
-        Report.find({ followUpDate: today })
-          .sort({ status: 1, followUpTime: 1 })
-          .lean(),
-        Report.find({
-          followUpDate: { $gt: today },
-        })
-          .sort({ followUpDate: 1, followUpTime: 1 })
-          .limit(8)
-          .lean(),
-      ]);
+    const [
+      totalReports,
+      interestedOutlets,
+      upcomingCount,
+      allReportsRaw,
+      interestedRaw,
+      allUpcomingRaw,
+      todayRaw,
+      futureRaw,
+    ] = await Promise.all([
+      Report.countDocuments(),
+      Report.countDocuments({ interestLevel: "Interested" }),
+      Report.countDocuments({
+        followUpDate: { $gte: today },
+      }),
+      Report.find().sort({ createdAt: -1 }).limit(100).lean(),
+      Report.find({ interestLevel: "Interested" }).sort({ createdAt: -1 }).limit(100).lean(),
+      Report.find({
+        followUpDate: { $gte: today },
+      })
+        .sort({ followUpDate: 1, followUpTime: 1 })
+        .lean(),
+      Report.find({
+        followUpDate: today,
+      })
+        .sort({ followUpTime: 1 })
+        .lean(),
+      Report.find({
+        followUpDate: { $gt: today },
+      })
+        .sort({ followUpDate: 1, followUpTime: 1 })
+        .lean(),
+    ]);
 
     return {
       totalReports,
       interestedOutlets,
-      pendingFollowUps,
+      pendingFollowUps: upcomingCount,
+      allReports: allReportsRaw.map(serializeReport),
+      interestedReports: interestedRaw.map(serializeReport),
+      allPendingFollowUps: allUpcomingRaw.map(serializeReport),
       todayFollowUps: todayRaw.map(serializeReport),
-      upcomingFollowUps: upcomingRaw.map(serializeReport),
+      upcomingFollowUps: futureRaw.map(serializeReport),
       todayDate: today,
     };
-  } catch (error: any) {
-    console.error("MongoDB connection error in getDashboardStats:", error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("MongoDB error in getDashboardStats:", msg);
     return {
       totalReports: 0,
       interestedOutlets: 0,
       pendingFollowUps: 0,
+      allReports: [],
+      interestedReports: [],
+      allPendingFollowUps: [],
       todayFollowUps: [],
       upcomingFollowUps: [],
       todayDate: today,
-      error: error.message || "Could not connect to MongoDB database.",
+      error: "Unable to connect to database. Please check connection settings.",
     };
   }
 }
@@ -113,6 +151,8 @@ export async function getReports({
   outletType?: string;
   date?: string;
 }) {
+  await requireAuth();
+
   try {
     await connectDB();
     const skip = (page - 1) * limit;
@@ -120,7 +160,7 @@ export async function getReports({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const query: any = {};
 
-    if (search.trim()) {
+    if (typeof search === "string" && search.trim()) {
       const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escaped, "i");
       query.$or = [
@@ -130,19 +170,19 @@ export async function getReports({
       ];
     }
 
-    if (interest && interest !== "All") {
+    if (typeof interest === "string" && interest && interest !== "All") {
       query.interestLevel = interest;
     }
 
-    if (status && status !== "All") {
+    if (typeof status === "string" && status && status !== "All") {
       query.status = status;
     }
 
-    if (outletType && outletType !== "All") {
+    if (typeof outletType === "string" && outletType && outletType !== "All") {
       query.outletType = outletType;
     }
 
-    if (date) {
+    if (typeof date === "string" && date) {
       query.followUpDate = date;
     }
 
@@ -160,21 +200,24 @@ export async function getReports({
       limit,
       totalPages: Math.ceil(total / limit) || 1,
     };
-  } catch (error: any) {
-    console.error("MongoDB connection error in getReports:", error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("MongoDB error in getReports:", msg);
     return {
       reports: [],
       total: 0,
       page,
       limit,
       totalPages: 1,
-      error: error.message || "Failed to load reports from database.",
+      error: "Failed to load reports from database.",
     };
   }
 }
 
 export async function getReportById(id: string): Promise<ReportItem | null> {
+  await requireAuth();
   await connectDB();
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return null;
   }
@@ -183,13 +226,15 @@ export async function getReportById(id: string): Promise<ReportItem | null> {
 }
 
 export async function createReport(data: ReportFormData) {
+  await requireAuth();
   await connectDB();
+
   const newReport = await Report.create({
-    firmName: data.firmName,
-    ownerName: data.ownerName,
-    mobileNumber: data.mobileNumber,
-    outletType: data.outletType,
-    interestLevel: data.interestLevel,
+    firmName: String(data.firmName || "").trim(),
+    ownerName: String(data.ownerName || "").trim(),
+    mobileNumber: String(data.mobileNumber || "").trim(),
+    outletType: data.outletType || "Retail",
+    interestLevel: data.interestLevel || "Interested",
     status: data.status || "Pending",
     quotePrice: data.quotePrice ? Number(data.quotePrice) : null,
     followUpDate: data.followUpDate || null,
@@ -205,21 +250,54 @@ export async function createReport(data: ReportFormData) {
 
   revalidatePath("/");
   revalidatePath("/reports");
+  revalidatePath("/calendar");
   return { success: true, report: serializeReport(newReport) };
 }
 
 export async function updateReport(id: string, data: Partial<ReportFormData>) {
+  await requireAuth();
   await connectDB();
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid report ID");
+  }
+
+  // Whitelist editable fields (prevent mass assignment)
+  const allowedFields = [
+    "firmName",
+    "ownerName",
+    "mobileNumber",
+    "outletType",
+    "interestLevel",
+    "status",
+    "quotePrice",
+    "followUpDate",
+    "followUpTime",
+    "standeeType",
+    "followUpRemarks",
+    "feedback",
+    "outletImage",
+    "latitude",
+    "longitude",
+    "locationAddress",
+  ] as const;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateData: any = { ...data };
-  if (data.quotePrice !== undefined) {
-    updateData.quotePrice = data.quotePrice ? Number(data.quotePrice) : null;
+  const updateData: Record<string, any> = {};
+  for (const field of allowedFields) {
+    if (field in data) {
+      updateData[field] = data[field as keyof ReportFormData];
+    }
   }
-  if (data.latitude !== undefined) {
-    updateData.latitude = data.latitude ? Number(data.latitude) : null;
+
+  if (updateData.quotePrice !== undefined) {
+    updateData.quotePrice = updateData.quotePrice ? Number(updateData.quotePrice) : null;
   }
-  if (data.longitude !== undefined) {
-    updateData.longitude = data.longitude ? Number(data.longitude) : null;
+  if (updateData.latitude !== undefined) {
+    updateData.latitude = updateData.latitude ? Number(updateData.latitude) : null;
+  }
+  if (updateData.longitude !== undefined) {
+    updateData.longitude = updateData.longitude ? Number(updateData.longitude) : null;
   }
 
   const updatedReport = await Report.findByIdAndUpdate(
@@ -230,28 +308,62 @@ export async function updateReport(id: string, data: Partial<ReportFormData>) {
 
   revalidatePath("/");
   revalidatePath("/reports");
+  revalidatePath("/calendar");
   revalidatePath(`/reports/${id}`);
   return { success: true, report: serializeReport(updatedReport) };
 }
 
 export async function updateReportStatus(id: string, status: string) {
+  await requireAuth();
   await connectDB();
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid report ID");
+  }
+
   const updatedReport = await Report.findByIdAndUpdate(
     id,
-    { $set: { status } },
+    { $set: { status: String(status) } },
     { new: true }
   ).lean();
 
   revalidatePath("/");
   revalidatePath("/reports");
+  revalidatePath("/calendar");
   return { success: true, report: serializeReport(updatedReport) };
 }
 
 export async function deleteReport(id: string) {
+  await requireAuth();
   await connectDB();
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid report ID");
+  }
+
   await Report.findByIdAndDelete(id);
 
   revalidatePath("/");
   revalidatePath("/reports");
+  revalidatePath("/calendar");
   return { success: true };
+}
+
+export async function getAllScheduledReports(): Promise<ReportItem[]> {
+  await requireAuth();
+
+  try {
+    await connectDB();
+    const reports = await Report.find({
+      followUpDate: { $ne: null, $exists: true, $nin: ["", null] },
+    })
+      .sort({ followUpDate: 1, followUpTime: 1 })
+      .lean();
+
+    return reports.map(serializeReport);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Failed to fetch scheduled reports:", msg);
+    return [];
+  }
 }

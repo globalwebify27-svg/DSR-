@@ -34,6 +34,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     <AppLayout>
       <Suspense fallback={<div className="p-8 text-xs text-[#737784]">Loading reports...</div>}>
         <ReportsView
+          key={`${status}-${interest}-${search}-${page}-${date}`}
           initialReports={initialData.reports}
           initialTotal={initialData.total}
           initialPage={initialData.page}

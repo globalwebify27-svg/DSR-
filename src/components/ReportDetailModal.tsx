@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { X, MapPin, Calendar, Clock, DollarSign, Store, Phone, User, MessageSquare, Flag } from "lucide-react";
+import Image from "next/image";
+import { X, MapPin, Calendar, Clock, DollarSign, Phone, User, Flag } from "lucide-react";
 import { ReportItem } from "./DataTable";
 import { StatusBadge } from "./StatusBadge";
 
@@ -129,11 +130,13 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
           {report.outletImage && (
             <div>
               <h4 className="font-semibold text-[#171923] mb-1">Outlet Photo</h4>
-              <div className="border border-[#E5E7EB] rounded-md overflow-hidden max-h-48 flex items-center justify-center bg-gray-50">
-                <img
+              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden h-48 w-full flex items-center justify-center bg-gray-50">
+                <Image
                   src={report.outletImage}
                   alt={report.firmName}
-                  className="max-h-48 object-contain w-full"
+                  fill
+                  className="object-contain"
+                  unoptimized
                 />
               </div>
             </div>

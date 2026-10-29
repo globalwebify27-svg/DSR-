@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Filter, Calendar, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw } from "lucide-react";
 
 interface FilterPanelProps {
   currentInterest: string;

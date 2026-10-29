@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -12,222 +12,212 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowUpRight,
-  Square
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { StatCard } from "./StatCard";
 import { StatusBadge } from "./StatusBadge";
-import { ReportItem } from "./DataTable";
 import { ReportDetailModal } from "./ReportDetailModal";
-import { updateReportStatus } from "@/lib/actions";
+import { ExportDropdown } from "./ExportDropdown";
+import { useDashboard, DashboardStats } from "@/hooks/useDashboard";
+import { formatDate, formatTime } from "@/lib/formatters";
 
 interface DashboardViewProps {
-  stats: {
-    totalReports: number;
-    interestedOutlets: number;
-    pendingFollowUps: number;
-    todayFollowUps: ReportItem[];
-    upcomingFollowUps: ReportItem[];
-    todayDate: string;
-    error?: string;
-  };
+  stats: DashboardStats;
 }
 
 export function DashboardView({ stats }: DashboardViewProps) {
-  const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
-  const [activeTab, setActiveTab] = useState<"today" | "upcoming">("today");
-  const [todayFollowUps, setTodayFollowUps] = useState<ReportItem[]>(stats.todayFollowUps);
-  const [upcomingFollowUps, setUpcomingFollowUps] = useState<ReportItem[]>(stats.upcomingFollowUps);
+  const {
+    selectedCard,
+    setSelectedCard,
+    upcomingTab,
+    setUpcomingTab,
+    selectedReport,
+    setSelectedReport,
+    currentList,
+    allReports,
+    interestedReports,
+    allPendingFollowUps,
+    todayFollowUps,
+    upcomingFollowUps,
+    exportTitle,
+    filenamePrefix,
+    handleQuickStatus,
+    getFollowUpType,
+  } = useDashboard(stats);
 
-  const handleQuickStatus = async (id: string, newStatus: string) => {
-    await updateReportStatus(id, newStatus);
-    setTodayFollowUps((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-    );
-    setUpcomingFollowUps((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-    );
+  const renderFollowUpBadge = (dateStr?: string | null) => {
+    const type = getFollowUpType(dateStr);
+    if (type === "today") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-50 text-[#FF5722] ring-1 ring-inset ring-[#FF5722]/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] animate-pulse" />
+          Today
+        </span>
+      );
+    }
+    if (type === "upcoming") {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+          Upcoming
+        </span>
+      );
+    }
+    return null;
   };
-
-  const currentList = activeTab === "today" ? todayFollowUps : upcomingFollowUps;
 
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Page Header */}
       <PageHeader
-        title="Sales Dashboard"
-        subtitle="Daily performance metrics and scheduled outlet follow-ups"
+        title="Dashboard"
         actionText="Add Report"
         actionHref="/reports/new"
-      />
+      >
+        <ExportDropdown
+          reports={currentList}
+          title={exportTitle}
+          filenamePrefix={filenamePrefix}
+        />
+      </PageHeader>
 
+      {/* Database Error Alert */}
       {stats.error && (
         <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-start gap-3">
           <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 shrink-0 animate-pulse" />
           <div className="text-sm space-y-1">
             <p className="font-semibold">MongoDB Connection Pending</p>
-            <p className="text-amber-800 text-xs">
-              {stats.error}
-            </p>
+            <p className="text-amber-800 text-xs">{stats.error}</p>
             <p className="text-xs text-amber-700 pt-1">
-              Please paste your MongoDB Atlas connection string into <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">.env.local</code> as <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">MONGODB_URI</code>.
+              Please paste your MongoDB Atlas connection string into{" "}
+              <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">
+                .env.local
+              </code>{" "}
+              as{" "}
+              <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">
+                MONGODB_URI
+              </code>
+              .
             </p>
           </div>
         </div>
       )}
 
-      {/* 3 Compact Summary Cards */}
+      {/* 3 Interactive Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           title="Total Reports"
           value={stats.totalReports}
           icon={FileText}
-          subtitle="All recorded outlets"
+          isActive={selectedCard === "total"}
+          onClick={() => setSelectedCard("total")}
         />
         <StatCard
           title="Interested Outlets"
           value={stats.interestedOutlets}
           icon={Heart}
-          subtitle="High conversion potential"
           highlight
+          isActive={selectedCard === "interested"}
+          onClick={() => setSelectedCard("interested")}
         />
         <StatCard
-          title="Pending Follow-ups"
+          title="Upcoming Follow-ups"
           value={stats.pendingFollowUps}
           icon={Clock}
-          subtitle="Active pipeline calls/visits"
+          isActive={selectedCard === "upcoming"}
+          onClick={() => setSelectedCard("upcoming")}
         />
       </div>
 
-      {/* Today's Follow-ups Section (Clean Table Card) */}
+      {/* Dynamic List Section */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-xs">
-        <div className="px-6 py-4 border-b border-[#E5E7EB]">
-          <h2 className="text-base sm:text-lg font-bold text-[#171923]">
-            Today&apos;s Follow-ups
-          </h2>
-        </div>
+        {/* Header with Title and Mode Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:px-6 sm:py-4 border-b border-[#E5E7EB] bg-white">
+          <div className="flex items-center gap-2.5">
+            {selectedCard === "total" && (
+              <FileText className="w-5 h-5 text-[#FF5722]" />
+            )}
+            {selectedCard === "interested" && (
+              <Heart className="w-5 h-5 text-[#FF5722]" />
+            )}
+            {selectedCard === "upcoming" && (
+              <Clock className="w-5 h-5 text-[#FF5722]" />
+            )}
 
-        {todayFollowUps.length === 0 ? (
-          <div className="py-10 px-6 text-center text-xs text-[#737784]">
-            No follow-ups scheduled for today.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB] text-[#171923] text-xs sm:text-sm font-bold">
-                  <th className="py-3 px-6 whitespace-nowrap">Time</th>
-                  <th className="py-3 px-6 whitespace-nowrap">Firm/Owner</th>
-                  <th className="py-3 px-6 whitespace-nowrap">Mobile</th>
-                  <th className="py-3 px-6 whitespace-nowrap">Interested</th>
-                  <th className="py-3 px-6 whitespace-nowrap">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E5E7EB] text-xs sm:text-sm">
-                {todayFollowUps.map((item) => {
-                  const firmOwnerText = [
-                    item.ownerName,
-                    item.firmName,
-                    item.locationAddress,
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
-
-                  return (
-                    <tr
-                      key={`today-sec-${item.id}`}
-                      className="hover:bg-[#F9FAFB] transition-colors"
-                    >
-                      <td className="py-4 px-6 whitespace-nowrap font-medium text-[#171923]">
-                        {item.followUpTime || "—"}
-                      </td>
-                      <td className="py-4 px-6 text-[#171923] font-medium min-w-[240px]">
-                        {firmOwnerText || item.firmName}
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap text-[#171923]">
-                        {item.mobileNumber}
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        {item.interestLevel === "Interested" ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-[#0D8A50] text-white">
-                            Yes
-                          </span>
-                        ) : item.interestLevel === "Maybe" ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-500 text-white">
-                            Maybe
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-400 text-white">
-                            No
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedReport(item)}
-                          className="bg-[#0066FF] hover:bg-[#0052CC] text-white text-xs font-semibold px-3 py-1.5 rounded-md inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                        >
-                          <Square className="w-3.5 h-3.5 stroke-[2.2]" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Follow-up Section */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden shadow-2xs">
-        {/* Table Header with Today / Upcoming Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:px-5 sm:py-3.5 border-b border-[#E5E7EB] bg-[#F8F9FA]">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#FF5722]" />
-            <h2 className="text-xs font-bold text-[#171923] uppercase tracking-wider">
-              Follow-up Schedule
+            <h2 className="text-base sm:text-lg font-bold text-[#171923]">
+              {selectedCard === "total"
+                ? "Total Reports"
+                : selectedCard === "interested"
+                ? "Interested Outlets"
+                : "Upcoming Follow-ups"}
             </h2>
+            <span className="bg-orange-50 text-[#FF5722] border border-orange-100 text-xs font-semibold px-2 py-0.5 rounded-full">
+              {currentList.length}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1 bg-white p-0.5 rounded-md border border-[#E5E7EB] w-full sm:w-auto justify-between sm:justify-start">
-            <button
-              type="button"
-              onClick={() => setActiveTab("today")}
-              className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 text-xs font-medium rounded transition-colors text-center cursor-pointer ${
-                activeTab === "today"
-                  ? "bg-[#FF5722] text-white"
-                  : "text-[#737784] hover:text-[#171923]"
-              }`}
-            >
-              Today's Tasks ({todayFollowUps.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("upcoming")}
-              className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 text-xs font-medium rounded transition-colors text-center cursor-pointer ${
-                activeTab === "upcoming"
-                  ? "bg-[#FF5722] text-white"
-                  : "text-[#737784] hover:text-[#171923]"
-              }`}
-            >
-              Upcoming ({upcomingFollowUps.length})
-            </button>
-          </div>
+          {selectedCard === "upcoming" ? (
+            <div className="flex items-center gap-1 bg-[#F3F4F6] p-1 rounded-lg border border-[#E5E7EB] w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setUpcomingTab("all")}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                  upcomingTab === "all"
+                    ? "bg-white text-[#FF5722] shadow-xs"
+                    : "text-[#737784] hover:text-[#171923]"
+                }`}
+              >
+                All Upcoming ({allPendingFollowUps.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpcomingTab("today")}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                  upcomingTab === "today"
+                    ? "bg-white text-[#FF5722] shadow-xs"
+                    : "text-[#737784] hover:text-[#171923]"
+                }`}
+              >
+                Today ({todayFollowUps.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpcomingTab("upcoming")}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-semibold rounded-md transition-colors text-center cursor-pointer ${
+                  upcomingTab === "upcoming"
+                    ? "bg-white text-[#FF5722] shadow-xs"
+                    : "text-[#737784] hover:text-[#171923]"
+                }`}
+              >
+                Upcoming ({upcomingFollowUps.length})
+              </button>
+            </div>
+          ) : (
+            <div className="text-xs text-[#737784] font-medium hidden sm:block">
+              {selectedCard === "total"
+                ? "Showing all recorded outlet visits"
+                : "Showing outlets marked as Interested"}
+            </div>
+          )}
         </div>
 
         {/* Content */}
         {currentList.length === 0 ? (
-          <div className="py-12 px-4 text-center text-xs text-[#737784]">
-            No {activeTab === "today" ? "follow-ups scheduled for today" : "upcoming follow-ups"}.
-            <div className="mt-2">
+          <div className="py-14 px-4 text-center text-xs text-[#737784]">
+            {selectedCard === "total"
+              ? "No reports recorded yet."
+              : selectedCard === "interested"
+              ? "No interested outlets found yet."
+              : upcomingTab === "all"
+              ? "No upcoming follow-ups scheduled."
+              : upcomingTab === "today"
+              ? "No follow-ups scheduled for today."
+              : "No upcoming follow-ups scheduled."}
+            <div className="mt-2.5">
               <Link
                 href="/reports/new"
-                className="text-[#FF5722] hover:underline font-medium inline-flex items-center gap-1"
+                className="text-[#FF5722] hover:underline font-semibold inline-flex items-center gap-1"
               >
-                Schedule a new follow-up <ArrowUpRight className="w-3 h-3" />
+                Create a new report <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -236,12 +226,17 @@ export function DashboardView({ stats }: DashboardViewProps) {
             {/* Mobile Card List (< md) */}
             <div className="md:hidden divide-y divide-[#E5E7EB]">
               {currentList.map((item) => (
-                <div key={item.id} className="p-3.5 space-y-2.5">
+                <div key={item.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-semibold text-sm text-[#171923]">{item.firmName}</h3>
+                      <h3 className="font-semibold text-sm text-[#171923]">
+                        {item.firmName}
+                      </h3>
                       <p className="text-xs text-[#737784] mt-0.5">
-                        {item.ownerName} • <span className="font-medium text-[#4B5563]">{item.outletType}</span>
+                        {item.ownerName} •{" "}
+                        <span className="font-medium text-[#4B5563]">
+                          {item.outletType}
+                        </span>
                       </p>
                     </div>
                     <StatusBadge type="interest" value={item.interestLevel} />
@@ -250,27 +245,35 @@ export function DashboardView({ stats }: DashboardViewProps) {
                   <div className="flex items-center justify-between text-xs">
                     <a
                       href={`tel:${item.mobileNumber}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#171923] hover:text-[#FF5722] bg-[#F8F9FA] px-2 py-1 rounded border border-[#E5E7EB]"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#171923] hover:text-[#FF5722] bg-[#F8F9FA] px-2.5 py-1 rounded border border-[#E5E7EB]"
                     >
                       <Phone className="w-3 h-3 text-[#FF5722]" />
                       {item.mobileNumber}
                     </a>
-                    <div className="text-right text-[11px] text-[#737784]">
-                      <span className="font-medium text-[#171923] flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-[#FF5722]" />
-                        {item.followUpDate || "Today"}
-                      </span>
-                      {item.followUpTime && <span>{item.followUpTime}</span>}
-                    </div>
+                    {item.followUpDate ? (
+                      <div className="text-right text-[11px] flex items-center gap-1.5">
+                        {renderFollowUpBadge(item.followUpDate)}
+                        <span className="font-semibold text-[#171923]">
+                          {formatDate(item.followUpDate)}
+                        </span>
+                        {item.followUpTime && (
+                          <span className="text-[#737784] font-medium">
+                            • {formatTime(item.followUpTime)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-[#9CA3AF]">—</span>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <StatusBadge type="status" value={item.status} />
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setSelectedReport(item)}
-                        className="px-2.5 py-1 text-xs text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] rounded transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 text-xs text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] rounded transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
                       >
                         <Eye className="w-3 h-3 text-[#737784]" />
                         Details
@@ -279,7 +282,7 @@ export function DashboardView({ stats }: DashboardViewProps) {
                         <button
                           type="button"
                           onClick={() => handleQuickStatus(item.id, "Completed")}
-                          className="px-2.5 py-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
                         >
                           <CheckCircle2 className="w-3 h-3" />
                           Done
@@ -295,13 +298,14 @@ export function DashboardView({ stats }: DashboardViewProps) {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-white border-b border-[#E5E7EB] text-[#737784] font-semibold">
-                    <th className="py-2.5 px-4">Date & Time</th>
-                    <th className="py-2.5 px-4">Firm / Owner</th>
-                    <th className="py-2.5 px-4">Mobile</th>
-                    <th className="py-2.5 px-4">Interest</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
+                  <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB] text-[#737784] font-semibold">
+                    <th className="py-3 px-5">Firm / Owner</th>
+                    <th className="py-3 px-5 whitespace-nowrap">Mobile</th>
+                    <th className="py-3 px-5 whitespace-nowrap">Outlet Type</th>
+                    <th className="py-3 px-5 whitespace-nowrap">Interest</th>
+                    <th className="py-3 px-5 whitespace-nowrap">Status</th>
+                    <th className="py-3 px-5 whitespace-nowrap">Follow-up / Date</th>
+                    <th className="py-3 px-5 text-right whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB] text-[#171923]">
@@ -310,51 +314,67 @@ export function DashboardView({ stats }: DashboardViewProps) {
                       key={item.id}
                       className="hover:bg-[#F9FAFB] transition-colors"
                     >
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-medium text-[#171923] flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-[#FF5722]" />
-                          {item.followUpDate || "Today"}
-                        </div>
-                        {item.followUpTime && (
-                          <div className="text-[11px] text-[#737784] mt-0.5 ml-5">
-                            {item.followUpTime}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         <div className="font-semibold text-[#171923] text-sm">
                           {item.firmName}
                         </div>
                         <div className="text-[11px] text-[#737784]">
-                          {item.ownerName} • {item.outletType}
+                          {item.ownerName}
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-5 whitespace-nowrap">
                         <a
                           href={`tel:${item.mobileNumber}`}
-                          className="inline-flex items-center text-[#171923] hover:text-[#FF5722] transition-colors"
+                          className="inline-flex items-center text-[#171923] hover:text-[#FF5722] transition-colors text-xs font-medium"
                         >
-                          <Phone className="w-3 h-3 mr-1 text-[#737784]" />
+                          <Phone className="w-3 h-3 mr-1 text-[#FF5722]" />
                           {item.mobileNumber}
                         </a>
                       </td>
 
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-5 whitespace-nowrap">
+                        <span className="font-medium text-[#4B5563]">
+                          {item.outletType}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-5 whitespace-nowrap">
                         <StatusBadge type="interest" value={item.interestLevel} />
                       </td>
 
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-5 whitespace-nowrap">
                         <StatusBadge type="status" value={item.status} />
                       </td>
 
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-5 whitespace-nowrap">
+                        {item.followUpDate ? (
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-[#171923] flex items-center gap-1.5 text-xs sm:text-sm">
+                                <Calendar className="w-3.5 h-3.5 text-[#FF5722] shrink-0" />
+                                {formatDate(item.followUpDate)}
+                              </span>
+                              {renderFollowUpBadge(item.followUpDate)}
+                            </div>
+                            {item.followUpTime && (
+                              <div className="text-[11px] text-[#737784] pl-5 flex items-center gap-1 font-medium">
+                                <Clock className="w-3 h-3 text-[#9CA3AF] shrink-0" />
+                                {formatTime(item.followUpTime)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[#9CA3AF] text-xs">—</span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => setSelectedReport(item)}
-                            className="px-2.5 py-1 text-xs text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] rounded transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 text-xs text-[#171923] bg-white border border-[#E5E7EB] hover:bg-[#F8F9FA] rounded transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
                           >
                             <Eye className="w-3 h-3 text-[#737784]" />
                             Details
@@ -364,7 +384,7 @@ export function DashboardView({ stats }: DashboardViewProps) {
                             <button
                               type="button"
                               onClick={() => handleQuickStatus(item.id, "Completed")}
-                              className="px-2.5 py-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition-colors inline-flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
                               title="Mark as Completed"
                             >
                               <CheckCircle2 className="w-3 h-3" />
@@ -382,13 +402,17 @@ export function DashboardView({ stats }: DashboardViewProps) {
         )}
 
         {/* Footer Link to All Reports */}
-        <div className="p-3 sm:px-5 sm:py-2.5 border-t border-[#E5E7EB] bg-[#F8F9FA] flex items-center justify-between text-xs">
+        <div className="p-3 sm:px-6 sm:py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] flex items-center justify-between text-xs">
           <span className="text-[#737784]">
-            Scheduled touchpoints
+            {selectedCard === "total"
+              ? `Showing ${allReports.length} total reports`
+              : selectedCard === "interested"
+              ? `Showing ${interestedReports.length} interested outlets`
+              : "Showing upcoming customer touchpoints"}
           </span>
           <Link
             href="/reports"
-            className="text-[#FF5722] hover:text-[#E64A19] font-medium inline-flex items-center gap-1"
+            className="text-[#FF5722] hover:text-[#E64A19] font-semibold inline-flex items-center gap-1"
           >
             View all reports <ChevronRight className="w-3.5 h-3.5" />
           </Link>

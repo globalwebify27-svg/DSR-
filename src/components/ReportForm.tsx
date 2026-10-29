@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
+import Image from "next/image";
 import {
-  Store,
-  Calendar,
-  Clock,
-  DollarSign,
   MapPin,
   Upload,
   AlertCircle,
@@ -15,6 +11,7 @@ import {
   Navigation
 } from "lucide-react";
 import { ReportFormData } from "@/lib/actions";
+import { useReportForm } from "@/hooks/useReportForm";
 
 interface ReportFormProps {
   initialData?: Partial<ReportFormData> & { id?: string };
@@ -46,178 +43,20 @@ export function ReportForm({
   onSubmit,
   isEditing = false,
 }: ReportFormProps) {
-  const router = useRouter();
-
-  const [formData, setFormData] = useState<ReportFormData>({
-    firmName: initialData?.firmName || "",
-    ownerName: initialData?.ownerName || "",
-    mobileNumber: initialData?.mobileNumber || "",
-    outletType: initialData?.outletType || "Retail",
-    interestLevel: initialData?.interestLevel || "Interested",
-    status: initialData?.status || "Pending",
-    quotePrice: initialData?.quotePrice || null,
-    followUpDate: initialData?.followUpDate || "",
-    followUpTime: initialData?.followUpTime || "",
-    standeeType: initialData?.standeeType || "None",
-    followUpRemarks: initialData?.followUpRemarks || "",
-    feedback: initialData?.feedback || "",
-    outletImage: initialData?.outletImage || null,
-    latitude: initialData?.latitude || null,
-    longitude: initialData?.longitude || null,
-    locationAddress: initialData?.locationAddress || "",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [gpsSuccess, setGpsSuccess] = useState(Boolean(initialData?.latitude));
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "quotePrice" ? (value === "" ? null : Number(value)) : value,
-    }));
-  };
-
-  const handleCaptureLocation = () => {
-    if (!navigator.geolocation) {
-      setErrorMsg("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    setGpsLoading(true);
-    setErrorMsg(null);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        let detectedPlaceName = "Detected Location";
-
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-
-          if (res.ok) {
-            const data = await res.json();
-            if (data.display_name) {
-              const addr = data.address || {};
-              const parts = [
-                addr.suburb || addr.neighbourhood || addr.road,
-                addr.city || addr.town || addr.county || addr.state_district,
-                addr.state,
-              ].filter(Boolean);
-              detectedPlaceName = parts.length > 0 ? parts.join(", ") : data.display_name;
-            }
-          }
-        } catch {
-          // If offline or network issue, fallback cleanly
-          detectedPlaceName = "Current GPS Location";
-        }
-
-        setFormData((prev) => ({
-          ...prev,
-          latitude: lat,
-          longitude: lon,
-          locationAddress: prev.locationAddress && prev.locationAddress !== "Current GPS Location"
-            ? prev.locationAddress
-            : detectedPlaceName,
-        }));
-        setGpsLoading(false);
-        setGpsSuccess(true);
-      },
-      (error) => {
-        setGpsLoading(false);
-        setErrorMsg(
-          error.message || "Failed to retrieve GPS location. Please check browser permissions."
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  };
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMsg("Image size exceeds 10MB limit. Please select a smaller photo.");
-      return;
-    }
-
-    try {
-      setImageUploading(true);
-      setErrorMsg(null);
-
-      const body = new FormData();
-      body.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to upload image to Cloudinary");
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        outletImage: data.url,
-      }));
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      setErrorMsg(err?.message || "Failed to upload image.");
-    } finally {
-      setImageUploading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
-
-    if (!formData.firmName.trim()) {
-      setErrorMsg("Firm Name is required.");
-      return;
-    }
-    if (!formData.ownerName.trim()) {
-      setErrorMsg("Owner Name is required.");
-      return;
-    }
-    if (!formData.mobileNumber.trim()) {
-      setErrorMsg("Mobile Number is required.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const res = await onSubmit(formData);
-      if (res.success) {
-        router.push("/reports");
-      } else {
-        setErrorMsg(res.error || "Failed to save report.");
-      }
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    formData,
+    isSubmitting,
+    imageUploading,
+    errorMsg,
+    gpsLoading,
+    gpsSuccess,
+    handleChange,
+    handleCaptureLocation,
+    handleImageChange,
+    handleRemoveImage,
+    handleSubmit,
+    handleCancel,
+  } = useReportForm({ initialData, onSubmit });
 
   // Base input class: text-base on mobile to prevent iOS Safari auto-zoom, text-xs on sm screens
   const inputClass =
@@ -477,15 +316,17 @@ export function ReportForm({
                 </span>
               </div>
             ) : formData.outletImage ? (
-              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 p-2">
-                <img
+              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 h-36 w-full">
+                <Image
                   src={formData.outletImage}
                   alt="Outlet preview"
-                  className="w-full h-36 object-contain rounded"
+                  fill
+                  className="object-contain p-2"
+                  unoptimized
                 />
                 <button
                   type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, outletImage: null }))}
+                  onClick={handleRemoveImage}
                   className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1.5 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
                   title="Remove image"
                 >
@@ -572,7 +413,7 @@ export function ReportForm({
       <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-2">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleCancel}
           className="w-full sm:w-auto px-5 py-2.5 sm:py-2 text-xs font-medium text-[#737784] hover:text-[#171923] bg-white border border-[#E5E7EB] rounded-md hover:bg-[#F8F9FA] transition-colors cursor-pointer text-center"
         >
           Cancel

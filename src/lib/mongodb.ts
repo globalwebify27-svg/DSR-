@@ -1,18 +1,15 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var mongooseCache: MongooseCache | undefined;
 }
 
-let cached: MongooseCache = global.mongooseCache || {
+const cached: MongooseCache = global.mongooseCache || {
   conn: null,
   promise: null,
 };
@@ -26,31 +23,43 @@ export async function connectDB() {
 
   if (!uri) {
     throw new Error(
-      "Missing MongoDB connection string. Please define MONGODB_URI in your .env or .env.local file (e.g. MONGODB_URI=\"mongodb://localhost:27017/dsr_db\" or your MongoDB Atlas URI)."
+      "Missing MongoDB connection string. Please define MONGODB_URI in your .env or .env.local file."
     );
   }
 
-  if (cached.conn) {
-    return cached.conn;
+  // If already connected and ready, return existing connection
+  if (mongoose.connection.readyState === 1) {
+    return mongoose;
   }
 
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
+  // If currently in the process of connecting, await the promise
+  if (cached.promise && mongoose.connection.readyState === 2) {
+    return await cached.promise;
+  }
 
-    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
+  const opts = {
+    bufferCommands: false,
+    serverSelectionTimeoutMS: 5000,
+  };
+
+  cached.promise = mongoose
+    .connect(uri, opts)
+    .then((mongooseInstance) => {
+      cached.conn = mongooseInstance;
       return mongooseInstance;
+    })
+    .catch((err) => {
+      cached.promise = null;
+      cached.conn = null;
+      throw err;
     });
-  }
 
   try {
     cached.conn = await cached.promise;
+    return cached.conn;
   } catch (e) {
     cached.promise = null;
+    cached.conn = null;
     throw e;
   }
-
-  return cached.conn;
 }
-
