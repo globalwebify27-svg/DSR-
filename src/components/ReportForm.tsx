@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import {
   MapPin,
   Upload,
+  Camera,
   AlertCircle,
   CheckCircle2,
   X,
@@ -14,6 +15,7 @@ import {
 import { ReportFormData } from "@/lib/actions";
 import { useReportForm } from "@/hooks/useReportForm";
 import { LocationPickerMap } from "./LocationPickerMap";
+import { CameraCaptureModal } from "./CameraCaptureModal";
 
 interface ReportFormProps {
   initialData?: Partial<ReportFormData> & { id?: string };
@@ -49,6 +51,8 @@ export function ReportForm({
   onSubmit,
   isEditing = false,
 }: ReportFormProps) {
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
   const {
     formData,
     isSubmitting,
@@ -60,6 +64,7 @@ export function ReportForm({
     handleCaptureLocation,
     handlePinLocation,
     handleImageChange,
+    uploadImageFile,
     handleRemoveImage,
     handleSubmit,
     handleCancel,
@@ -213,49 +218,94 @@ export function ReportForm({
               )}
             </div>
             {imageUploading ? (
-              <div className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border border-[#E5E7EB] rounded-md bg-[#F8F9FA] p-4 text-center">
-                <div className="w-6 h-6 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
-                <span className="text-xs font-medium text-[#171923]">
+              <div className="flex flex-col items-center justify-center min-h-[240px] sm:h-full border border-[#E5E7EB] rounded-lg bg-[#F8F9FA] p-4 text-center">
+                <div className="w-7 h-7 border-2 border-[#FF5722] border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs font-semibold text-[#171923]">
                   Uploading to Cloudinary...
                 </span>
                 <span className="text-[11px] text-[#737784] mt-0.5">
-                  Optimizing and securing image CDN link
+                  Optimizing and securing storefront photo CDN link
                 </span>
               </div>
             ) : formData.outletImage ? (
-              <div className="relative border border-[#E5E7EB] rounded-md overflow-hidden bg-gray-50 h-44 sm:h-full sm:min-h-[260px] w-full">
-                <Image
-                  src={formData.outletImage}
-                  alt="Outlet preview"
-                  fill
-                  className="object-contain p-2"
-                  unoptimized
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-600 p-1.5 rounded-full shadow-xs border border-[#E5E7EB] cursor-pointer"
-                  title="Remove image"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div className="flex flex-col gap-2">
+                <div className="relative border border-[#E5E7EB] rounded-lg overflow-hidden bg-gray-50 h-52 sm:h-64 w-full group">
+                  <Image
+                    src={formData.outletImage}
+                    alt="Outlet storefront preview"
+                    fill
+                    className="object-contain p-2"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-3 right-3 bg-white/95 hover:bg-white text-red-600 p-1.5 rounded-full shadow-md border border-[#E5E7EB] cursor-pointer transition-transform hover:scale-105"
+                    title="Remove image"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-medium text-[#FF5722] bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition-colors cursor-pointer"
+                  >
+                    <Camera className="w-3.5 h-3.5 shrink-0" />
+                    <span>Retake</span>
+                  </button>
+                  <label className="inline-flex items-center justify-center gap-1.5 py-2 px-2.5 text-xs font-medium text-[#171923] bg-[#F8F9FA] hover:bg-[#F3F4F6] border border-[#E5E7EB] rounded-md transition-colors cursor-pointer text-center">
+                    <Upload className="w-3.5 h-3.5 shrink-0 text-[#737784]" />
+                    <span>From Gallery</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-44 sm:h-full sm:min-h-[260px] border-2 border-dashed border-[#E5E7EB] hover:border-[#FF5722] rounded-md bg-[#F8F9FA]/50 hover:bg-[#F8F9FA] transition-colors cursor-pointer p-4 text-center">
-                <Upload className="w-6 h-6 text-[#FF5722] mb-1.5" />
-                <span className="text-xs font-semibold text-[#171923]">
-                  Tap to capture or upload storefront photo *
-                </span>
-                <span className="text-[11px] text-[#737784] mt-0.5">
-                  Uploads directly to Cloudinary (Required)
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex flex-col justify-between min-h-[240px] sm:h-full border-2 border-dashed border-[#E5E7EB] hover:border-[#FF5722]/50 rounded-lg bg-[#F8F9FA]/60 p-4 transition-colors">
+                <div className="text-center my-auto py-2">
+                  <div className="w-11 h-11 rounded-full bg-orange-50 text-[#FF5722] flex items-center justify-center mx-auto mb-2 border border-orange-100 shadow-2xs">
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#171923]">
+                    Storefront Photo Required
+                  </h4>
+                  <p className="text-[11px] text-[#737784] mt-0.5 max-w-xs mx-auto">
+                    Take a live photo or upload from your device
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
+                  {/* Camera Option */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 py-2.5 px-2 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer text-center"
+                  >
+                    <Camera className="w-4 h-4 shrink-0" />
+                    <span>Camera</span>
+                  </button>
+
+                  {/* File Upload Option */}
+                  <label className="inline-flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white hover:bg-[#F3F4F6] text-[#171923] border border-[#E5E7EB] hover:border-[#D1D5DB] rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs text-center">
+                    <Upload className="w-4 h-4 shrink-0 text-[#737784]" />
+                    <span>Upload from Gallery</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
             )}
           </div>
 
@@ -494,6 +544,15 @@ export function ReportForm({
             : "Save Report"}
         </button>
       </div>
+
+      {/* Live In-App Camera Modal */}
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(blob) => {
+          uploadImageFile(blob);
+        }}
+      />
     </form>
   );
 }

@@ -163,11 +163,8 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     }
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
+  const uploadImageFile = async (fileOrBlob: File | Blob) => {
+    if (fileOrBlob.size > 10 * 1024 * 1024) {
       setErrorMsg("Image size exceeds 10MB limit. Please select a smaller photo.");
       return;
     }
@@ -176,8 +173,13 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
       setImageUploading(true);
       setErrorMsg(null);
 
+      const filename =
+        fileOrBlob instanceof File
+          ? fileOrBlob.name
+          : `outlet-camera-${Date.now()}.jpg`;
+
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", fileOrBlob, filename);
 
       const res = await fetch("/api/upload", {
         method: "POST",
@@ -200,6 +202,12 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     } finally {
       setImageUploading(false);
     }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadImageFile(file);
   };
 
   const handleRemoveImage = () => {
@@ -275,6 +283,7 @@ export function useReportForm({ initialData, onSubmit }: UseReportFormProps) {
     handleCaptureLocation,
     handlePinLocation,
     handleImageChange,
+    uploadImageFile,
     handleRemoveImage,
     handleSubmit,
     handleCancel: () => router.back(),
